@@ -8,6 +8,7 @@ const { resolveInputPath,
 	str,
 	requireCliSavePath,
 } = require('./lib/franchise');
+const { loadTeamStatsTableMaps, buildTotalDefenseYardBoard } = require('./lib/team-season-stats');
 
 
 function buildTeamPayload(teamRec, conference) {
@@ -108,6 +109,27 @@ function pollBoard(teams, pollKey) {
 		}));
 }
 
+function unitRankBoard(teams, rankKey) {
+	return teams
+		.filter((t) => Number(t.ratings?.[rankKey]) > 0)
+		.sort((a, b) => a.ratings[rankKey] - b.ratings[rankKey])
+		.map((t) => ({
+			rank: t.ratings[rankKey],
+			lastWeekRank: 0,
+			points: t.ratings[rankKey === 'defensiveRank' ? 'defense' : 'offense'] || 0,
+			firstPlaceVotes: 0,
+			movement: 0,
+			rating: t.ratings[rankKey === 'defensiveRank' ? 'defense' : 'offense'] || 0,
+			teamIndex: t.teamIndex,
+			row: t.row,
+			displayName: t.displayName,
+			nickname: t.nickname,
+			label: t.label,
+			record: t.record,
+			conference: t.conference,
+		}));
+}
+
 async function extractTeams(savePath, { write = true } = {}) {
 	const resolved = resolveInputPath(savePath);
 	const file = await openSave(resolved);
@@ -119,12 +141,42 @@ async function extractTeams(savePath, { write = true } = {}) {
 		if (!teamRec || teamRec.isEmpty) continue;
 		const identity = teamIdentity(teamRec, teamRec.index);
 		if (!identity.displayName) continue;
-		// Skip empty / placeholder FCS shells with no useful identity if needed
+		// Generic FCS opponent shells (FCS East/West/…) — not playable programs.
+		if (/^FCS\b/i.test(identity.displayName) || /^FCS\b/i.test(identity.label || '')) continue;
 		const conference = teamRowToConference.get(identity.row) || null;
 		teams.push(buildTeamPayload(teamRec, conference));
 	}
 
-	teams.sort((a, b) => a.displayName.localeCompare(b.displayName));
+	teams.sort((a, b) => {
+		const as = a.standings.league > 0 ? a.standings.league : 9999;
+		const bs = b.standings.league > 0 ? b.standings.league : 9999;
+		if (as !== bs) return as - bs;
+		return a.displayName.localeCompare(b.displayName);
+	});
+
+	const teamByIndex = new Map(teams.map((t) => [t.teamIndex, t]));
+	const { arrById, statsById } = await loadTeamStatsTableMaps(file);
+	const totalDefense = buildTotalDefenseYardBoard(teamT, arrById, statsById, { limit: 25 }).map(
+		(row, idx) => {
+			const team = teamByIndex.get(row.teamIndex);
+			return {
+				rank: idx + 1,
+				lastWeekRank: 0,
+				points: row.defYards,
+				firstPlaceVotes: 0,
+				movement: 0,
+				rating: row.defYards,
+				yardsPerGame: row.yardsPerGame,
+				teamIndex: row.teamIndex,
+				row: row.row,
+				displayName: row.displayName,
+				nickname: team ? team.nickname : '',
+				label: row.label,
+				record: team ? team.record : row.record,
+				conference: team ? team.conference : null,
+			};
+		}
+	);
 
 	const payload = {
 		generatedAt: new Date().toISOString(),
@@ -135,6 +187,8 @@ async function extractTeams(savePath, { write = true } = {}) {
 			media: pollBoard(teams, 'media'),
 			coaches: pollBoard(teams, 'coaches'),
 			cfp: pollBoard(teams, 'cfp'),
+			totalOffense: unitRankBoard(teams, 'offensiveRank'),
+			totalDefense,
 		},
 		teams,
 	};

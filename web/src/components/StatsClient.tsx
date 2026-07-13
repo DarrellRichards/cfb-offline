@@ -19,6 +19,9 @@ type TeamRank = {
   totalYards?: number;
   sacks?: number;
   ints?: number;
+  defYards?: number;
+  yardsPerGame?: number;
+  games?: number;
 };
 
 const PLAYER_TABS: Array<{ key: string; label: string }> = [
@@ -34,8 +37,13 @@ const PLAYER_TABS: Array<{ key: string; label: string }> = [
   { key: 'fieldGoals', label: 'FG Made' },
 ];
 
-const TEAM_TABS: Array<{ key: string; label: string; valueKey: keyof TeamRank }> = [
+const TEAM_TABS: Array<{
+  key: string;
+  label: string;
+  valueKey: keyof TeamRank;
+}> = [
   { key: 'totalOffense', label: 'Total Off', valueKey: 'totalYards' },
+  { key: 'totalDefense', label: 'Total Def', valueKey: 'defYards' },
   { key: 'passYards', label: 'Pass Yds', valueKey: 'passYards' },
   { key: 'rushYards', label: 'Rush Yds', valueKey: 'rushYards' },
   { key: 'sacks', label: 'Sacks', valueKey: 'sacks' },
@@ -141,7 +149,8 @@ export function StatsClient({
                 <tr>
                   <th>#</th>
                   <th>Team</th>
-                  <th>{teamMeta.label}</th>
+                  <th>{teamMeta.key === 'totalDefense' ? 'Yds Allowed' : teamMeta.label}</th>
+                  {teamMeta.key === 'totalDefense' && <th>Yds/G</th>}
                 </tr>
               </thead>
               <tbody>
@@ -150,6 +159,7 @@ export function StatsClient({
                     <td>{idx + 1}</td>
                     <td>{row.displayName}</td>
                     <td>{String(row[teamMeta.valueKey] ?? 0)}</td>
+                    {teamMeta.key === 'totalDefense' && <td>{row.yardsPerGame ?? '—'}</td>}
                   </tr>
                 ))}
               </tbody>

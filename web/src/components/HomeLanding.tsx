@@ -34,6 +34,10 @@ export function HomeDeskLinks() {
         <strong>Stats</strong>
         <span>Leaders and team yards</span>
       </Link>
+      <Link className="quickLink" href="/awards">
+        <strong>Awards</strong>
+        <span>Heisman, weekly, champions</span>
+      </Link>
       <Link className="quickLink" href="/teams">
         <strong>Teams</strong>
         <span>Directory and ratings</span>

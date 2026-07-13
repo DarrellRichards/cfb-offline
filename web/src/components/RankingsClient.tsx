@@ -10,38 +10,65 @@ type PollRow = {
   points: number;
   firstPlaceVotes?: number;
   movement: number;
+  rating?: number;
+  yardsPerGame?: number;
   teamIndex: number;
   displayName: string;
   record: { wins: number; losses: number; ties: number };
   conference?: { name: string } | null;
 };
 
+type RankingBoard = 'media' | 'coaches' | 'cfp' | 'totalOffense' | 'totalDefense';
+
+const BOARD_META: Record<
+  RankingBoard,
+  { label: string; kind: 'poll' | 'unit' | 'yards'; description: string }
+> = {
+  media: { label: 'Media', kind: 'poll', description: 'AP-style media poll' },
+  coaches: { label: 'Coaches', kind: 'poll', description: 'Coaches poll' },
+  cfp: { label: 'CFP', kind: 'poll', description: 'College Football Playoff ranking' },
+  totalOffense: { label: 'Total Offense', kind: 'unit', description: 'Team offensive rank from the dynasty' },
+  totalDefense: {
+    label: 'Total Defense',
+    kind: 'yards',
+    description: 'Fewest yards allowed (pass + rush) this season',
+  },
+};
+
+function isFcsShell(name: string) {
+  return /^FCS\b/i.test(name || '');
+}
+
 export function RankingsClient({
   rankings,
 }: {
-  rankings: { media: PollRow[]; coaches: PollRow[]; cfp: PollRow[] };
+  rankings: {
+    media: PollRow[];
+    coaches: PollRow[];
+    cfp: PollRow[];
+    totalOffense?: PollRow[];
+    totalDefense?: PollRow[];
+  };
 }) {
-  const [poll, setPoll] = useState<'media' | 'coaches' | 'cfp'>('media');
-  const rows = useMemo(() => rankings[poll] || [], [rankings, poll]);
+  const [poll, setPoll] = useState<RankingBoard>('media');
+  const meta = BOARD_META[poll];
+  const rows = useMemo(() => {
+    const source = rankings[poll] || [];
+    return source.filter((row) => !isFcsShell(row.displayName));
+  }, [rankings, poll]);
 
   return (
     <section className="section" style={{ marginTop: 8 }}>
       <div className="sectionHead">
         <div>
-          <p className="eyebrow">Polls</p>
+          <p className="eyebrow">Polls & unit ranks</p>
           <h2>Rankings</h2>
-          <p>Media, Coaches, and CFP polls pulled from the dynasty Team table.</p>
+          <p>{meta.description}.</p>
         </div>
       </div>
 
       <div className="tabs">
-        {(
-          [
-            ['media', 'Media'],
-            ['coaches', 'Coaches'],
-            ['cfp', 'CFP'],
-          ] as const
-        ).map(([key, label]) => (
+        {(Object.keys(BOARD_META) as RankingBoard[]).map((key) => (
           <button
             key={key}
             type="button"
@@ -49,7 +76,7 @@ export function RankingsClient({
             data-active={poll === key}
             onClick={() => setPoll(key)}
           >
-            {label}
+            {BOARD_META[key].label}
           </button>
         ))}
       </div>
@@ -62,8 +89,19 @@ export function RankingsClient({
               <th>Team</th>
               <th>Record</th>
               <th>Conf</th>
-              <th>Pts</th>
-              <th>Move</th>
+              {meta.kind === 'poll' ? (
+                <>
+                  <th>Pts</th>
+                  <th>Move</th>
+                </>
+              ) : meta.kind === 'yards' ? (
+                <>
+                  <th>Yds Allowed</th>
+                  <th>Yds/G</th>
+                </>
+              ) : (
+                <th>Unit OVR</th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -75,19 +113,35 @@ export function RankingsClient({
                 </td>
                 <td>{formatRecord(row.record.wins, row.record.losses, row.record.ties)}</td>
                 <td>{row.conference?.name || '—'}</td>
-                <td>{row.points}</td>
-                <td
-                  className={
-                    row.movement > 0 ? 'movementUp' : row.movement < 0 ? 'movementDown' : undefined
-                  }
-                >
-                  {movementLabel(row.movement)}
-                </td>
+                {meta.kind === 'poll' ? (
+                  <>
+                    <td>{row.points}</td>
+                    <td
+                      className={
+                        row.movement > 0 ? 'movementUp' : row.movement < 0 ? 'movementDown' : undefined
+                      }
+                    >
+                      {movementLabel(row.movement)}
+                    </td>
+                  </>
+                ) : meta.kind === 'yards' ? (
+                  <>
+                    <td>{row.rating || row.points || 0}</td>
+                    <td>{row.yardsPerGame ?? '—'}</td>
+                  </>
+                ) : (
+                  <td>{row.rating || row.points || '—'}</td>
+                )}
               </tr>
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={6}>No ranked teams in this poll yet.</td>
+                <td colSpan={meta.kind === 'poll' || meta.kind === 'yards' ? 6 : 5}>
+                  No ranked teams in this board yet
+                  {poll === 'totalDefense' || poll === 'totalOffense'
+                    ? ' — refresh/extract to rebuild unit ranks.'
+                    : '.'}
+                </td>
               </tr>
             )}
           </tbody>

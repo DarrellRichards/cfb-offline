@@ -9,13 +9,14 @@ export const DATA_DIR = process.env.CFB_DATA_DIR
   ? path.resolve(process.env.CFB_DATA_DIR)
   : path.join(REPO_ROOT, 'data');
 
-export type SnapshotName = 'league' | 'schedule' | 'teams' | 'stats' | 'recruits';
+export type SnapshotName = 'league' | 'schedule' | 'teams' | 'stats' | 'awards' | 'recruits';
 
 const FILE_MAP: Record<SnapshotName, string> = {
   league: 'league-snapshot.json',
   schedule: 'schedule.json',
   teams: 'teams.json',
   stats: 'stats.json',
+  awards: 'awards.json',
   recruits: 'recruit-board.json',
 };
 

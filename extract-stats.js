@@ -5,11 +5,13 @@ const { resolveInputPath,
 	safeField,
 	parseRef,
 	buildTeamLookup,
+	teamIdentity,
 	writeJson,
 	num,
 	str,
 	requireCliSavePath,
 } = require('./lib/franchise');
+const { loadTeamStatsTableMaps, buildTotalDefenseYardBoard } = require('./lib/team-season-stats');
 
 
 function playerName(playerRec) {
@@ -221,6 +223,8 @@ async function extractStats(savePath, { write = true } = {}) {
 	};
 
 	const teamTotals = [...teamAgg.values()].sort((a, b) => a.displayName.localeCompare(b.displayName));
+	const { arrById, statsById } = await loadTeamStatsTableMaps(file);
+	const totalDefense = buildTotalDefenseYardBoard(teamT, arrById, statsById, { limit: 25 });
 
 	const teamRankings = {
 		passYards: [...teamTotals].sort((a, b) => b.passYards - a.passYards).slice(0, 25),
@@ -229,6 +233,7 @@ async function extractStats(savePath, { write = true } = {}) {
 			.map((t) => ({ ...t, totalYards: t.passYards + t.rushYards }))
 			.sort((a, b) => b.totalYards - a.totalYards)
 			.slice(0, 25),
+		totalDefense,
 		sacks: [...teamTotals].sort((a, b) => b.sacks - a.sacks).slice(0, 25),
 		ints: [...teamTotals].sort((a, b) => b.ints - a.ints).slice(0, 25),
 	};

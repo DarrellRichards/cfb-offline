@@ -1,6 +1,6 @@
 {
   "name": "offline-cfb",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Offline dynasty desk for EA Sports College Football saves",
   "main": "app/electron-main.js",
   "author": "CFB Offline contributors",
@@ -18,8 +18,8 @@
     "web:start": "npm run start --prefix web",
     "desktop": "npm run web:build && cross-env CFB_ELECTRON_DEV=0 npx electron .",
     "desktop:dev": "cross-env CFB_ELECTRON_DEV=1 npx electron .",
-    "dist": "npm run web:build && npx electron-builder --config electron-builder.yml",
-    "dist:win": "npm run web:build && npx electron-builder --win --x64 --config electron-builder.yml",
+    "dist": "npm run web:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder --config electron-builder.yml",
+    "dist:win": "npm run web:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder --win --x64 --config electron-builder.yml",
     "dist:mac": "npm run web:build && npx electron-builder --mac --config electron-builder.yml",
     "dist:linux": "npm run web:build && npx electron-builder --linux AppImage --config electron-builder.yml",
     "extract:all": "node extract-all.js",
@@ -27,10 +27,12 @@
     "extract:schedule": "node extract-schedule.js",
     "extract:teams": "node extract-teams.js",
     "extract:stats": "node extract-stats.js",
+    "extract:awards": "node extract-awards.js",
     "test": "node -e \"require('./lib/franchise'); console.log('ok')\""
   },
   "dependencies": {
-    "madden-franchise": "^4.3.1"
+    "madden-franchise": "^4.3.1",
+    "sql.js": "^1.14.1"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",

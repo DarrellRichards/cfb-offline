@@ -1,5 +1,5 @@
 import { readSnapshot } from '@/lib/data';
-import { formatNumber } from '@/lib/format';
+import { formatNumber, humanizeLabel } from '@/lib/format';
 import { formatGameStatus } from '@/lib/schedule';
 import type { ScheduleSnapshot } from '@/lib/types';
 import { Scoreboard } from '@/components/Scoreboard';
@@ -58,7 +58,7 @@ export default function GotwPage() {
         <div className="detailGrid">
           <div className="statTile">
             <span>Weather</span>
-            <strong style={{ fontSize: '1.2rem' }}>{game.weather || '—'}</strong>
+            <strong style={{ fontSize: '1.2rem' }}>{humanizeLabel(game.weather) || '—'}</strong>
           </div>
           <div className="statTile">
             <span>Temp</span>

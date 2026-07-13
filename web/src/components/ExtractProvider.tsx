@@ -13,13 +13,14 @@ import { useRouter } from 'next/navigation';
 
 export type SaveInfo = { name: string; fullPath: string; mtimeMs: number; size: number };
 
-export type ExtractStepId = 'league' | 'schedule' | 'teams' | 'stats' | 'recruits';
+export type ExtractStepId = 'league' | 'schedule' | 'teams' | 'stats' | 'awards' | 'recruits';
 
 export const EXTRACT_STEPS: Array<{ id: ExtractStepId; label: string }> = [
   { id: 'league', label: 'League' },
   { id: 'schedule', label: 'Schedule' },
   { id: 'teams', label: 'Teams' },
   { id: 'stats', label: 'Stats' },
+  { id: 'awards', label: 'Awards' },
   { id: 'recruits', label: 'Recruits' },
 ];
 
@@ -57,6 +58,7 @@ function emptySteps(): Record<ExtractStepId, StepState> {
     schedule: 'pending',
     teams: 'pending',
     stats: 'pending',
+    awards: 'pending',
     recruits: 'pending',
   };
 }

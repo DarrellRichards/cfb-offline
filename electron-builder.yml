@@ -15,6 +15,8 @@ compression: store
 afterPack: scripts/after-pack.js
 
 extraResources:
+  - from: build/icon.ico
+    to: icon.ico
   - from: .
     to: runtime
     filter:
@@ -23,9 +25,11 @@ extraResources:
       - extract-schedule.js
       - extract-teams.js
       - extract-stats.js
+      - extract-awards.js
       - extract-recruit-board.js
       - update-team-nil.js
       - update-team-cli.js
+      - archive-cli.js
       - C27_468_2.gz
       - lib/**/*
       - data/physical-ability-map.json
@@ -55,6 +59,9 @@ extraResources:
       - "!**/data/schedule.json"
       - "!**/data/teams.json"
       - "!**/data/stats.json"
+      - "!**/data/awards.json"
+      - "!**/*.sqlite"
+      - "!**/*.sqlite-journal"
       # Only exclude this repo's build output — NOT node_modules/*/dist
       # (e.g. next/dist/bin/next, madden-franchise/dist).
       - "!dist{,/**/*}"
@@ -67,8 +74,12 @@ extraResources:
       - "!**/tests/**"
 
 win:
-  # Cross-builds from WSL/Linux need wine to edit the .exe; skip that step here.
+  # Unsigned local builds: winCodeSign extract fails on Windows without
+  # Developer Mode / symlink privilege (darwin libcrypto/libssl links).
+  # Window + shortcut icons still come from extraResources + NSIS icons below.
   signAndEditExecutable: false
+  forceCodeSigning: false
+  icon: build/icon.ico
   target:
     - target: nsis
       arch:
@@ -82,6 +93,9 @@ nsis:
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: CFB Offline
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
 mac:
   target:
     - dmg

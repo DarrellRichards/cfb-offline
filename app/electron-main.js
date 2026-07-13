@@ -18,6 +18,11 @@ const WEB_PORT = Number(process.env.CFB_WEB_PORT || 4310);
 const WEB_ORIGIN = `http://127.0.0.1:${WEB_PORT}`;
 const IS_DEV = process.env.CFB_ELECTRON_DEV === '1';
 
+// Groups the taskbar entry under our identity (Windows).
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.offlinecfb.app');
+}
+
 let nextProcess = null;
 let mainWindow = null;
 let startupPromptShown = false;
@@ -28,6 +33,22 @@ function getRuntimeRoot() {
   }
   // Dev: app/ sits next to extractors at repo root
   return path.resolve(__dirname, '..');
+}
+
+function getAppIconPath() {
+  const candidates = app.isPackaged
+    ? [
+        path.join(process.resourcesPath, 'icon.ico'),
+        path.join(process.resourcesPath, 'runtime', 'build', 'icon.ico'),
+      ]
+    : [
+        path.join(__dirname, '..', 'build', 'icon.ico'),
+        path.join(__dirname, 'icon.ico'),
+      ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  return undefined;
 }
 
 function getDataDir() {
@@ -217,6 +238,7 @@ function createWindow() {
   logBoot('createWindow:start');
   const preloadPath = path.join(__dirname, 'preload.js');
 
+  const iconPath = getAppIconPath();
   const win = new BrowserWindow({
     width: 1360,
     height: 900,
@@ -225,6 +247,7 @@ function createWindow() {
     show: false,
     title: 'CFB Offline',
     backgroundColor: '#0a0e16',
+    ...(iconPath ? { icon: iconPath } : {}),
     webPreferences: {
       preload: preloadPath,
       contextIsolation: true,
@@ -232,6 +255,7 @@ function createWindow() {
       sandbox: false,
     },
   });
+  logBoot(`createWindow:icon:${iconPath || 'none'}`);
 
   mainWindow = win;
 

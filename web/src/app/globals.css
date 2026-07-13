@@ -302,6 +302,18 @@ summary {
   display: flex;
   gap: 8px;
   flex-shrink: 0;
+  align-items: center;
+}
+
+.dynastySeasonSelect {
+  min-width: 140px;
+  max-width: 180px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-strong);
+  color: var(--ink);
 }
 
 .dynastyBarProgress {
@@ -313,6 +325,33 @@ summary {
   background: linear-gradient(90deg, transparent, var(--accent), var(--warm), transparent);
   background-size: 200% 100%;
   animation: sweep 1.4s linear infinite;
+}
+
+.standingsStack {
+  display: grid;
+  gap: 0;
+}
+
+.standingsGroupHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.standingsGroupHead h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  font-size: 1.35rem;
+  font-weight: 400;
+}
+
+.standingsGroupHead span {
+  color: var(--muted);
+  font-size: 0.8rem;
 }
 
 .main {

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readSnapshot, snapshotMeta, type SnapshotName } from '@/lib/data';
 
-const NAMES: SnapshotName[] = ['league', 'schedule', 'teams', 'stats', 'recruits'];
+const NAMES: SnapshotName[] = ['league', 'schedule', 'teams', 'stats', 'awards', 'recruits'];
 
 export async function GET(
   _req: Request,

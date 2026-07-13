@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import type { ScheduleSnapshot } from '@/lib/types';
 import { formatGameStatus } from '@/lib/schedule';
+import { humanizeLabel } from '@/lib/format';
 
 export function ScheduleClient({
   schedule,
@@ -100,7 +101,7 @@ export function ScheduleClient({
                 <td>{formatGameStatus(g)}</td>
                 <td>
                   {g.weather
-                    ? `${g.weather}${g.temperature ? ` · ${g.temperature}°` : ''}`
+                    ? `${humanizeLabel(g.weather)}${g.temperature ? ` · ${g.temperature}°` : ''}`
                     : '—'}
                 </td>
                 <td>{g.broadcastNetwork || '—'}</td>
