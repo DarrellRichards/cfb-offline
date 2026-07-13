@@ -117,6 +117,8 @@ export type TeamsSnapshot = {
     media: Array<Record<string, unknown>>;
     coaches: Array<Record<string, unknown>>;
     cfp: Array<Record<string, unknown>>;
+    totalOffense?: Array<Record<string, unknown>>;
+    totalDefense?: Array<Record<string, unknown>>;
   };
   teams: TeamRecord[];
 };
@@ -136,6 +138,108 @@ export type RecruitBoardSnapshot = {
   rowCount: number;
   teamContext: Record<string, unknown>;
   recruits: Array<Record<string, unknown>>;
+};
+
+export type AwardPerson = {
+  firstName?: string;
+  lastName?: string;
+  position?: string;
+  teamIndex?: number | null;
+  teamDisplayName?: string;
+  conferenceName?: string | null;
+  awardType?: string;
+  awardLabel?: string;
+  period?: string;
+  periodIndex?: number;
+  awardScore?: number;
+  overall?: number;
+  rank?: number;
+  currentRank?: number;
+  lastWeekRank?: number;
+};
+
+export type NationalChampionEntry = {
+  seasonYear: number;
+  periodIndex: number;
+  champion: {
+    teamIndex: number | null;
+    displayName: string;
+    rank: number;
+    score: number;
+    wins: number;
+    losses: number;
+    coachFirstName?: string;
+    coachLastName?: string;
+  };
+  runnerUp: {
+    teamIndex: number | null;
+    displayName: string;
+    rank: number;
+    score: number;
+    wins: number;
+    losses: number;
+    coachFirstName?: string;
+    coachLastName?: string;
+  };
+};
+
+export type ConferenceChampionEntry = {
+  seasonYear: number;
+  periodIndex: number;
+  conferenceName: string;
+  champion: {
+    teamIndex: number | null;
+    displayName: string;
+    rank: number;
+    score: number;
+    wins: number;
+    losses: number;
+    ties?: number;
+    coachFirstName?: string;
+    coachLastName?: string;
+  };
+  runnerUp: {
+    teamIndex: number | null;
+    displayName: string;
+    rank: number;
+    score: number;
+    wins: number;
+    losses: number;
+    ties?: number;
+  };
+};
+
+export type AnnualAwardEntry = {
+  seasonYear: number;
+  periodIndex: number;
+  awardType: string;
+  awardLabel: string;
+  firstName: string;
+  lastName: string;
+  position: string;
+  teamDisplayName: string;
+  teamIndex: number | null;
+};
+
+export type AwardsSnapshot = {
+  generatedAt: string;
+  savePath: string;
+  seasonYear: number;
+  baseCalendarYear: number;
+  currentWeek: number;
+  currentWeekType: string;
+  seasonYears: number[];
+  nationalChampions: NationalChampionEntry[];
+  conferenceChampions: ConferenceChampionEntry[];
+  annualAwards: AnnualAwardEntry[];
+  coachAwards: AwardPerson[];
+  current: {
+    heismanRace: AwardPerson[];
+    weeklyAwards: AwardPerson[];
+    preseasonAllAmericans: AwardPerson[];
+    otherSeasonAwards: AwardPerson[];
+  };
+  counts?: Record<string, number>;
 };
 
 export function formatRecord(wins: number, losses: number, ties = 0) {

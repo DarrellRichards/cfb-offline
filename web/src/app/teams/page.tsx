@@ -23,7 +23,9 @@ export default function TeamsPage() {
   return (
     <TeamsClient
       teams={data.teams}
-      conferences={data.conferences.map((c) => c.name).filter(Boolean)}
+      conferences={data.conferences
+        .map((c) => c.name)
+        .filter((name) => name && !/^FCS\b/i.test(name))}
     />
   );
 }

@@ -1,7 +1,7 @@
 {
   "name": "cfb-offline",
   "productName": "CFB Offline",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "CFB Offline dynasty desk",
   "main": "electron-main.js",
   "author": "CFB Offline contributors",

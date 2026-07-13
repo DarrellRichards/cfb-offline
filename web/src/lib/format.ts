@@ -14,3 +14,14 @@ export function formatDateTime(value: string | number | Date) {
     minute: '2-digit',
   }).format(date);
 }
+
+/** Turn CamelCase / snake_case enum labels into readable text (LightRain → Light Rain). */
+export function humanizeLabel(value: unknown) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  return raw
+    .replace(/_/g, ' ')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim();
+}

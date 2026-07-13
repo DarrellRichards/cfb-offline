@@ -23,7 +23,7 @@ export default function StatsPage() {
   return (
     <StatsClient
       leaders={stats.leaders as never}
-      teamRankings={stats.teamRankings as never}
+      teamRankings={(stats.teamRankings || {}) as never}
       playerCount={stats.playerCount}
     />
   );
