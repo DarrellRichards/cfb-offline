@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CFB Offline — Dynasty desk for College Football saves</title>
+    <meta
+      name="description"
+      content="CFB Offline turns your EA Sports College Football dynasty save into a local desk for scores, polls, stats, and recruiting."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="top">
+      <a class="topBrand" href="#top">CFB Offline</a>
+      <a class="topLink" href="#download">Download</a>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-label="CFB Offline">
+        <div class="heroField" aria-hidden="true">
+          <div class="heroFieldGrain"></div>
+          <svg class="heroYardLines" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <linearGradient id="fieldFade" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#0c3a24" />
+                <stop offset="55%" stop-color="#062416" />
+                <stop offset="100%" stop-color="#04150d" />
+              </linearGradient>
+            </defs>
+            <rect width="1200" height="800" fill="url(#fieldFade)" />
+            <g stroke="rgba(236,240,232,0.22)" stroke-width="2" fill="none">
+              <line x1="0" y1="120" x2="1200" y2="120" />
+              <line x1="0" y1="220" x2="1200" y2="220" />
+              <line x1="0" y1="320" x2="1200" y2="320" />
+              <line x1="0" y1="420" x2="1200" y2="420" />
+              <line x1="0" y1="520" x2="1200" y2="520" />
+              <line x1="0" y1="620" x2="1200" y2="620" />
+              <line x1="0" y1="720" x2="1200" y2="720" />
+            </g>
+            <g stroke="rgba(230,184,77,0.55)" stroke-width="4" fill="none">
+              <line x1="0" y1="420" x2="1200" y2="420" />
+            </g>
+            <g fill="rgba(236,240,232,0.14)" font-family="Bebas Neue, sans-serif" font-size="42">
+              <text x="48" y="210">40</text>
+              <text x="48" y="310">30</text>
+              <text x="48" y="410">20</text>
+              <text x="48" y="510">10</text>
+              <text x="1100" y="210" text-anchor="end">40</text>
+              <text x="1100" y="310" text-anchor="end">30</text>
+              <text x="1100" y="410" text-anchor="end">20</text>
+              <text x="1100" y="510" text-anchor="end">10</text>
+            </g>
+          </svg>
+          <div class="heroVignette"></div>
+        </div>
+
+        <div class="heroCopy">
+          <p class="brand">CFB <span>OFFLINE</span></p>
+          <h1>Your dynasty, on a desk that stays local.</h1>
+          <p class="lede">
+            Pull scores, polls, leaders, and the recruiting board straight from your College Football
+            save — no account, no cloud sync.
+          </p>
+          <div class="ctaRow">
+            <a class="button" id="downloadPrimary" href="#download">Download for Windows</a>
+            <a class="buttonGhost" href="#how">See how it works</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="what">
+        <p class="eyebrow">What it is</p>
+        <h2>A dynasty desk for an offline season.</h2>
+        <p class="sectionLead">
+          CFB Offline reads your EA Sports College Football dynasty file and turns it into a focused
+          local app: schedule and weather, Game of the Week, rankings, team pages, stats leaders, and
+          recruiting.
+        </p>
+      </section>
+
+      <section class="section sectionAlt" id="how">
+        <p class="eyebrow">How it works</p>
+        <h2>Install once. Point at a save. Play the week.</h2>
+        <ol class="steps">
+          <li>
+            <strong>Install the Windows app</strong>
+            <span>One installer. Runs entirely on your machine.</span>
+          </li>
+          <li>
+            <strong>Select a DYNASTY save</strong>
+            <span>Usually under Documents · EA SPORTS College Football 27 · saves.</span>
+          </li>
+          <li>
+            <strong>Extract and explore</strong>
+            <span>League, schedule, teams, stats, and recruiting land on your desk in one pass.</span>
+          </li>
+        </ol>
+      </section>
+
+      <section class="section download" id="download">
+        <p class="eyebrow">Get the app</p>
+        <h2>Download CFB Offline</h2>
+        <p class="sectionLead">
+          Free Windows build. Runs on your PC, reads your dynasty save, and keeps everything local.
+        </p>
+        <div class="ctaRow">
+          <a class="button" id="downloadSecondary" href="#">Download installer</a>
+        </div>
+        <p class="meta" id="downloadMeta">Windows · x64</p>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <p>CFB Offline is an unofficial fan tool. Not affiliated with EA Sports.</p>
+    </footer>
+
+    <script src="./config.js"></script>
+    <script src="./main.js"></script>
+  </body>
+</html>

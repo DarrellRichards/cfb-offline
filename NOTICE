@@ -1,0 +1,19 @@
+# Notices
+
+## Third-party game data
+
+This project is an unofficial community tool. It is **not** affiliated with,
+endorsed by, or sponsored by Electronic Arts Inc. or EA Sports.
+
+- Dynasty save files belong to you and to EA. Do not redistribute other
+  players' saves.
+- `C27_468_2.gz` is a franchise schema used by [madden-franchise](https://www.npmjs.com/package/madden-franchise)
+  to read College Football 27 saves. Redistribution of EA assets may be
+  restricted by EA's terms. If you cannot ship this file, obtain a compatible
+  schema through lawful means and place it at the repo root (or set paths in
+  `lib/franchise.js`).
+
+## Trademarks
+
+EA SPORTS, College Football, and related marks are trademarks of Electronic
+Arts Inc. All rights reserved by their respective owners.

@@ -1,0 +1,92 @@
+appId: com.offlinecfb.app
+productName: CFB Offline
+copyright: Copyright © CFB Offline
+directories:
+  app: app
+  output: dist
+  buildResources: build
+
+asar: true
+# store avoids a p7zip/WSL failure when packing large node_modules trees at -mx=9
+compression: store
+
+# Do not list "package.json" in extraResources filters — electron-builder uses
+# those patterns as excludes for the app asar, which drops app/package.json.
+afterPack: scripts/after-pack.js
+
+extraResources:
+  - from: .
+    to: runtime
+    filter:
+      - extract-all.js
+      - extract-league-snapshot.js
+      - extract-schedule.js
+      - extract-teams.js
+      - extract-stats.js
+      - extract-recruit-board.js
+      - update-team-nil.js
+      - update-team-cli.js
+      - C27_468_2.gz
+      - lib/**/*
+      - data/physical-ability-map.json
+      - node_modules/**/*
+      - web/package.json
+      - web/.next/**/*
+      - web/node_modules/**/*
+      - web/public/**/*
+      - "!app/**"
+      - "!node_modules/electron{,/**/*}"
+      - "!node_modules/electron-builder{,/**/*}"
+      - "!node_modules/app-builder-bin{,/**/*}"
+      - "!node_modules/app-builder-lib{,/**/*}"
+      - "!node_modules/builder-util{,/**/*}"
+      - "!node_modules/builder-util-runtime{,/**/*}"
+      - "!node_modules/dmg-builder{,/**/*}"
+      - "!node_modules/7zip-bin{,/**/*}"
+      - "!node_modules/@electron{,/**/*}"
+      - "!node_modules/cross-env{,/**/*}"
+      - "!**/DYNASTY*"
+      - "!**/*.tmp"
+      - "!**/*.backup*"
+      - "!**/inflated-stream*"
+      - "!**/recruit-board.csv"
+      - "!**/data/recruit-board*.json"
+      - "!**/data/league-snapshot.json"
+      - "!**/data/schedule.json"
+      - "!**/data/teams.json"
+      - "!**/data/stats.json"
+      # Only exclude this repo's build output — NOT node_modules/*/dist
+      # (e.g. next/dist/bin/next, madden-franchise/dist).
+      - "!dist{,/**/*}"
+      - "!**/electron-startup.log"
+      - "!**/*.map"
+      - "!**/readme.md"
+      - "!**/README.md"
+      - "!**/CHANGELOG.md"
+      - "!**/test/**"
+      - "!**/tests/**"
+
+win:
+  # Cross-builds from WSL/Linux need wine to edit the .exe; skip that step here.
+  signAndEditExecutable: false
+  target:
+    - target: nsis
+      arch:
+        - x64
+  # Avoid spaces in the installer filename — makensis fails with
+  # "Can't open output file" on paths like "CFB Offline-Setup-....exe".
+  artifactName: CFB-Offline-Setup-${version}.${ext}
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: CFB Offline
+mac:
+  target:
+    - dmg
+  category: public.app-category.sports
+linux:
+  target:
+    - AppImage
+  category: Game

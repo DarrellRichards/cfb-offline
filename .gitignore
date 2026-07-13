@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+web/node_modules/
+app/node_modules/
+
+# Builds & caches
+dist/
+release/
+web/.next/
+web/out/
+*.tsbuildinfo
+.turbo/
+
+# Logs & OS junk
+*.log
+electron-startup.log
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+*.code-workspace
+
+# Local dynasty saves and scratch files (never commit these)
+DYNASTY*
+*.tmp
+*.backup*
+inflated-stream*.bin
+recruit-board.csv
+
+# Generated extract snapshots (keep physical-ability-map.json)
+data/recruit-board.json
+data/recruit-board-indexed.json
+data/league-snapshot.json
+data/schedule.json
+data/teams.json
+data/stats.json
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Packaging leftovers
+*.exe
+*.dmg
+*.AppImage
+*.blockmap
+*.nsis.7z

@@ -1,0 +1,52 @@
+{
+  "byPlayerType": {
+    "WR_DEEPTHREAT": {
+      "slot1": "Takeoff",
+      "slot2": "Deep Range"
+    },
+    "WR_SLOT": {
+      "slot1": "Shifty",
+      "slot2": "Side Step"
+    },
+    "QB_STRONGARM": {
+      "slot1": "Headstrong",
+      "slot2": "Dot"
+    },
+    "KP_POWER": {
+      "slot1": "Deep Range"
+    },
+    "KP_ACCURATE": {
+      "slot1": "Clutch Kicker"
+    }
+  },
+  "byPosition": {
+    "K": {
+      "slot1": "Deep Range"
+    },
+    "P": {
+      "slot1": "Coffin Corner"
+    }
+  },
+  "byPositionGroup": {
+    "OL": {
+      "slot1": "Second Level",
+      "slot2": "Quick Drop"
+    },
+    "DL": {
+      "slot1": "Pocket Disruptor",
+      "slot2": "Grip Breaker"
+    },
+    "LB": {
+      "slot1": "Hammer",
+      "slot2": "Robber"
+    },
+    "DB": {
+      "slot1": "Jammer",
+      "slot2": "House Call"
+    },
+    "RB": {
+      "slot1": "Side Step",
+      "slot2": "Headfirst"
+    }
+  }
+}
