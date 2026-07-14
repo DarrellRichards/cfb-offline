@@ -50,6 +50,13 @@ export default function RankingsPage() {
 
   return (
     <RankingsClient
+      savePath={teams.savePath || ''}
+      allTeams={teams.teams.map((t) => ({
+        teamIndex: t.teamIndex,
+        displayName: t.displayName,
+        record: t.record,
+        conference: t.conference,
+      }))}
       rankings={{
         media: teams.rankings.media as never,
         coaches: teams.rankings.coaches as never,

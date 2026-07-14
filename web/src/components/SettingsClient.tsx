@@ -19,10 +19,21 @@ const OPTIONS: Array<{
     description: 'Show development traits in the recruiting table and recruit detail drawer.',
   },
   {
+    key: 'recruitingOverall',
+    title: 'Recruiting Overall',
+    description: 'Show recruit overall ratings in the table, filters, and recruit detail drawer.',
+  },
+  {
     key: 'nilUpdates',
     title: 'NIL Updates',
     description:
       'Show the Program Points editor and allow writing NIL / program points back to your dynasty save.',
+  },
+  {
+    key: 'rankingEdits',
+    title: 'Edit Rankings',
+    description:
+      'Allow reordering Media and Coaches poll rankings and writing them back to your dynasty save. Off by default.',
   },
 ];
 

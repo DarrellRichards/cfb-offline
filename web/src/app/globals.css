@@ -820,6 +820,49 @@ table.dataTable tbody tr:hover {
   font-weight: 400;
 }
 
+.abilityChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.abilityChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  font-size: 0.92rem;
+}
+
+.abilityChipName {
+  font-weight: 600;
+}
+
+.abilityChipTier {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.abilityChip[data-tier='bronze'] .abilityChipTier {
+  color: #b87333;
+}
+
+.abilityChip[data-tier='silver'] .abilityChipTier {
+  color: #9aa4b2;
+}
+
+.abilityChip[data-tier='gold'] .abilityChipTier {
+  color: #d4a017;
+}
+
+.abilityChip[data-tier='platinum'] .abilityChipTier {
+  color: #7ec8e3;
+}
+
 .drawerBackdrop {
   position: fixed;
   inset: 0;

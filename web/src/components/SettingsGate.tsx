@@ -9,7 +9,7 @@ export function SettingsGate({
   children,
   fallback = null,
 }: {
-  setting: 'recruiting' | 'recruitingDevTraits' | 'nilUpdates';
+  setting: 'recruiting' | 'recruitingDevTraits' | 'recruitingOverall' | 'nilUpdates' | 'rankingEdits';
   children: React.ReactNode;
   fallback?: React.ReactNode;
 }) {
@@ -28,7 +28,7 @@ export function SettingsLink({
   href: string;
   className?: string;
   children: React.ReactNode;
-  setting?: 'recruiting' | 'recruitingDevTraits' | 'nilUpdates';
+  setting?: 'recruiting' | 'recruitingDevTraits' | 'recruitingOverall' | 'nilUpdates' | 'rankingEdits';
 }) {
   return (
     <SettingsGate setting={setting}>

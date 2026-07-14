@@ -11,6 +11,7 @@ type Recruit = {
   lastName: string;
   position: string;
   playerType?: string;
+  archetypeLabel?: string;
   nationalRank?: number;
   stars: number | string;
   overall: number | null;
@@ -25,8 +26,15 @@ type Recruit = {
   activePitches?: string;
   swayPitch?: string;
   physicalAbilities?: string;
+  physicalAbilityEntries?: Array<{
+    slot: number;
+    name: string;
+    tier: string;
+    label: string;
+  }>;
   boardRow?: number;
   recruitRow?: number;
+  onMyBoard?: boolean;
   ratings?: Record<string, number>;
   topSchools?: Array<{
     rank: number;
@@ -82,6 +90,7 @@ export function RecruitingClient({
   const router = useRouter();
   const { settings, ready } = useSettings();
   const showDevTraits = settings.recruitingDevTraits;
+  const showOverall = settings.recruitingOverall;
   const allowNilUpdates = settings.nilUpdates;
 
   const [search, setSearch] = useState('');
@@ -90,6 +99,7 @@ export function RecruitingClient({
   const [stage, setStage] = useState('');
   const [dev, setDev] = useState('');
   const [minOvr, setMinOvr] = useState('');
+  const [boardScope, setBoardScope] = useState<'all' | 'mine'>('all');
   const [sortKey, setSortKey] = useState<keyof Recruit | 'nationalRank'>('nationalRank');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [selected, setSelected] = useState<Recruit | null>(null);
@@ -116,6 +126,13 @@ export function RecruitingClient({
     }
   }, [showDevTraits, sortKey]);
 
+  useEffect(() => {
+    if (!showOverall) {
+      setMinOvr('');
+      if (sortKey === 'overall') setSortKey('nationalRank');
+    }
+  }, [showOverall, sortKey]);
+
   const positions = useMemo(
     () => [...new Set(recruits.map((r) => r.position).filter(Boolean))].sort(),
     [recruits]
@@ -133,11 +150,12 @@ export function RecruitingClient({
     const q = search.trim().toLowerCase();
     const min = Number(minOvr);
     let rows = recruits.filter((r) => {
+      if (boardScope === 'mine' && !r.onMyBoard) return false;
       if (position && r.position !== position) return false;
       if (stars && String(r.stars) !== stars) return false;
       if (stage && r.recruitStage !== stage) return false;
       if (dev && r.devTrait !== dev) return false;
-      if (Number.isFinite(min) && min > 0 && !(Number(r.overall) >= min)) return false;
+      if (showOverall && Number.isFinite(min) && min > 0 && !(Number(r.overall) >= min)) return false;
       if (q) {
         const hay = [
           r.firstName,
@@ -167,7 +185,7 @@ export function RecruitingClient({
     });
 
     return rows;
-  }, [recruits, search, position, stars, stage, dev, minOvr, sortKey, sortDir]);
+  }, [recruits, search, position, stars, stage, dev, minOvr, sortKey, sortDir, showOverall, boardScope]);
 
   function toggleSort(key: keyof Recruit | 'nationalRank') {
     if (sortKey === key) {
@@ -245,7 +263,7 @@ export function RecruitingClient({
       ['lastName', 'Last'],
       ['position', 'Pos'],
       ['stars', 'Stars'],
-      ['overall', 'OVR'],
+      ...(showOverall ? ([['overall', 'OVR']] as const) : []),
       ...(showDevTraits ? ([['devTrait', 'Dev']] as const) : []),
       ['offerCount', 'Offers'],
       ['recruitStage', 'Stage'],
@@ -261,7 +279,10 @@ export function RecruitingClient({
           <h2>Recruiting</h2>
           <p>
             {teamContext.teamLabel || 'Your program'} · {formatNumber(visible.length)} visible /{' '}
-            {formatNumber(recruits.length)} extracted
+            {formatNumber(recruits.length)} class
+            {recruits.some((r) => r.onMyBoard)
+              ? ` · ${formatNumber(recruits.filter((r) => r.onMyBoard).length)} on your board`
+              : ''}
             {generatedAt ? (
               <>
                 {' · '}
@@ -371,6 +392,10 @@ export function RecruitingClient({
           placeholder="Search name, pitch, trait…"
           style={{ minWidth: 220 }}
         />
+        <select value={boardScope} onChange={(e) => setBoardScope(e.target.value as 'all' | 'mine')}>
+          <option value="all">Full class</option>
+          <option value="mine">My board only</option>
+        </select>
         <select value={position} onChange={(e) => setPosition(e.target.value)}>
           <option value="">All positions</option>
           {positions.map((p) => (
@@ -405,13 +430,15 @@ export function RecruitingClient({
             ))}
           </select>
         )}
-        <input
-          type="number"
-          value={minOvr}
-          onChange={(e) => setMinOvr(e.target.value)}
-          placeholder="Min OVR"
-          style={{ minWidth: 100 }}
-        />
+        {showOverall && (
+          <input
+            type="number"
+            value={minOvr}
+            onChange={(e) => setMinOvr(e.target.value)}
+            placeholder="Min OVR"
+            style={{ minWidth: 100 }}
+          />
+        )}
       </div>
 
       <div className="panel tableWrap">
@@ -438,7 +465,7 @@ export function RecruitingClient({
                 <td>{r.lastName}</td>
                 <td>{r.position}</td>
                 <td>{r.stars}</td>
-                <td>{r.overall ?? '—'}</td>
+                {showOverall && <td>{r.overall ?? '—'}</td>}
                 {showDevTraits && <td>{humanize(r.devTrait)}</td>}
                 <td>{r.offerCount}</td>
                 <td>{humanize(r.recruitStage)}</td>
@@ -462,7 +489,8 @@ export function RecruitingClient({
                   {selected.firstName} {selected.lastName}
                 </h2>
                 <p style={{ color: 'var(--muted)', margin: '6px 0 0' }}>
-                  {selected.position} · {selected.stars}★ · OVR {selected.overall ?? '—'}
+                  {selected.position} · {selected.stars}★
+                  {showOverall ? ` · OVR ${selected.overall ?? '—'}` : ''}
                 </p>
               </div>
               <button type="button" className="buttonGhost" onClick={() => setSelected(null)}>
@@ -493,10 +521,32 @@ export function RecruitingClient({
 
             <div style={{ marginTop: 18 }}>
               <h3>Recruiting</h3>
+              <p>Archetype: {selected.archetypeLabel || humanize(selected.playerType) || '—'}</p>
               <p>Dealbreaker: {humanize(selected.dealbreaker)} ({formatGrade(selected.dealbreakerSchoolGrade)})</p>
               <p>Ideal pitch: {humanize(selected.idealPitch) || '—'}</p>
               <p>Active pitches: {humanize(selected.activePitches) || '—'}</p>
-              <p>Physical: {selected.physicalAbilities || '—'}</p>
+              <div style={{ marginTop: 10 }}>
+                <strong style={{ display: 'block', marginBottom: 8 }}>Physical abilities</strong>
+                {(selected.physicalAbilityEntries || []).length > 0 ? (
+                  <div className="abilityChips">
+                    {(selected.physicalAbilityEntries || []).map((ability) => (
+                      <span
+                        key={`${ability.slot}-${ability.name}-${ability.tier}`}
+                        className="abilityChip"
+                        data-tier={String(ability.tier || '').toLowerCase()}
+                        title={ability.label}
+                      >
+                        <span className="abilityChipName">{ability.name || `Slot ${ability.slot}`}</span>
+                        <span className="abilityChipTier">{ability.tier}</span>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ margin: 0, color: 'var(--muted)' }}>
+                    {selected.physicalAbilities || 'None unlocked'}
+                  </p>
+                )}
+              </div>
             </div>
 
             {selected.ratings && (
