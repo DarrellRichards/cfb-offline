@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { FranchiseFile } = require('madden-franchise');
+const { buildBackupPath } = require('./lib/backup');
 
 const ROOT_DIR = process.env.CFB_REPO_ROOT
 	? path.resolve(process.env.CFB_REPO_ROOT)
@@ -93,13 +94,6 @@ function getUserControlledTeamRecord(userCoach, coachT, teamT) {
 	}
 
 	return null;
-}
-
-function buildBackupPath(savePath) {
-	const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-	const backupDir = path.join(path.dirname(savePath), 'macsfeaturebackup');
-	fs.mkdirSync(backupDir, { recursive: true });
-	return path.join(backupDir, `${path.basename(savePath)}.backup-${timestamp}`);
 }
 
 const POINT_FIELD_MAP = {

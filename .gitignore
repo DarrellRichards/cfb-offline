@@ -28,13 +28,15 @@ DYNASTY*
 inflated-stream*.bin
 recruit-board.csv
 
-# Generated extract snapshots (keep physical-ability-map.json)
+# Generated extract snapshots (keep physical-ability-map.json / requirements)
 data/recruit-board.json
 data/recruit-board-indexed.json
 data/league-snapshot.json
 data/schedule.json
 data/teams.json
 data/stats.json
+data/awards.json
+data/player-type-archetype-fit.json
 
 # Env / secrets
 .env

@@ -1,4 +1,5 @@
 const { updateTeamNilPoints, updateTeamProgramPoints } = require('./update-team-nil');
+const { updatePollRankings } = require('./update-poll-rankings');
 const { resolveInputPath } = require('./lib/franchise');
 
 async function main() {
@@ -17,6 +18,10 @@ async function main() {
 		result = await updateTeamNilPoints(savePath, payload.nilValue, { backup: true });
 	} else if (mode === 'points') {
 		result = await updateTeamProgramPoints(savePath, payload, { backup: true });
+	} else if (mode === 'poll') {
+		result = await updatePollRankings(savePath, payload.poll, payload.entries || payload.rankings, {
+			backup: true,
+		});
 	} else {
 		throw new Error(`Unknown mode: ${mode}`);
 	}

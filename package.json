@@ -1,6 +1,6 @@
 {
   "name": "offline-cfb",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Offline dynasty desk for EA Sports College Football saves",
   "main": "app/electron-main.js",
   "author": "CFB Offline contributors",

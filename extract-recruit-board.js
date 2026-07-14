@@ -2,9 +2,12 @@ const fs = require('fs');
 const path = require('path');
 const { FranchiseFile } = require('madden-franchise');
 const { requireCliSavePath, ensureDataDir } = require('./lib/franchise');
+const {
+	resolvePhysicalAbilityEntries,
+	resolveArchetypeLabel,
+} = require('./lib/physical-abilities');
 
 const SCHEMA_PATH = path.resolve(__dirname, 'C27_468_2.gz');
-const PHYS_ABILITY_MAP_PATH = path.resolve(__dirname, 'data', 'physical-ability-map.json');
 
 function resolveInputPath(p) {
 	if (fs.existsSync(p)) {
@@ -47,23 +50,6 @@ function safeField(rec, field) {
 		return rec[field];
 	} catch {
 		return undefined;
-	}
-}
-
-function loadPhysicalAbilityMap() {
-	if (!fs.existsSync(PHYS_ABILITY_MAP_PATH)) {
-		return { byPlayerType: {}, byPosition: {}, byPositionGroup: {} };
-	}
-
-	try {
-		const raw = JSON.parse(fs.readFileSync(PHYS_ABILITY_MAP_PATH, 'utf8'));
-		return {
-			byPlayerType: raw.byPlayerType || {},
-			byPosition: raw.byPosition || {},
-			byPositionGroup: raw.byPositionGroup || {},
-		};
-	} catch {
-		return { byPlayerType: {}, byPosition: {}, byPositionGroup: {} };
 	}
 }
 
@@ -216,26 +202,6 @@ function getStars(playerRec, recruitRec) {
 	return 1;
 }
 
-function getPhysicalAbilityName(playerRec, slot) {
-	const candidates = [
-		`PhysicalAbility${slot}Name`,
-		`PhysicalAbilityName${slot}`,
-		`PhysicalAbilityTrait${slot}`,
-		`PhysicalAbility${slot}Type`,
-		`PhysicalAbilityType${slot}`,
-	];
-
-	for (const field of candidates) {
-		const v = safeField(playerRec, field);
-		if (v == null) continue;
-		const s = String(v).trim();
-		if (!s || s === 'None' || s === 'Invalid') continue;
-		return s;
-	}
-
-	return '';
-}
-
 function getPositionGroup(position) {
 	const pos = normalizeKey(position);
 	if (['LT', 'LG', 'C', 'RG', 'RT'].includes(pos)) return 'OL';
@@ -245,29 +211,6 @@ function getPositionGroup(position) {
 	if (['HB', 'FB'].includes(pos)) return 'RB';
 	if (['K', 'P'].includes(pos)) return 'KP';
 	return pos;
-}
-
-function resolveMappedPhysicalAbilityName(mapData, playerType, position, slot) {
-	const slotKey = `slot${slot}`;
-	const byType = mapData.byPlayerType || {};
-	const byPos = mapData.byPosition || {};
-	const byGroup = mapData.byPositionGroup || {};
-
-	const typeKey = normalizeKey(playerType);
-	const posKey = normalizeKey(position);
-	const groupKey = normalizeKey(getPositionGroup(position));
-
-	if (typeKey && byType[typeKey] && byType[typeKey][slotKey]) {
-		return String(byType[typeKey][slotKey]).trim();
-	}
-	if (posKey && byPos[posKey] && byPos[posKey][slotKey]) {
-		return String(byPos[posKey][slotKey]).trim();
-	}
-	if (groupKey && byGroup[groupKey] && byGroup[groupKey][slotKey]) {
-		return String(byGroup[groupKey][slotKey]).trim();
-	}
-
-	return '';
 }
 
 function getUserControlledCoach(coachT) {
@@ -749,7 +692,8 @@ async function main() {
 	const explicitPath = args.find((a) => !a.startsWith('--'));
 	const summaryJson = args.includes('--summary-json');
 	const noWrite = args.includes('--no-write');
-	const allRecruitsMode = args.includes('--all-recruits');
+	const boardOnlyMode = args.includes('--board-only');
+	const extractAllClass = !boardOnlyMode;
 	const outArgIdx = args.indexOf('--out');
 	const outPathArg = outArgIdx >= 0 && outArgIdx + 1 < args.length ? args[outArgIdx + 1] : null;
 	const outDirArgIdx = args.indexOf('--out-dir');
@@ -765,7 +709,6 @@ async function main() {
 	}
 
 	const file = await openSave(savePath);
-	const physicalAbilityMap = loadPhysicalAbilityMap();
 	const recruitTargetArrayT = await readTable(file, 'RecruitTarget[]');
 	const recruitTargetT = await readTable(file, 'RecruitTarget');
 	const recruitT = await readTable(file, 'Recruit');
@@ -823,6 +766,8 @@ async function main() {
 		const idealPitch = safeField(playerRec, 'IdealRecruitingPitch') || '';
 		const activePitches = (targetRec && safeField(targetRec, 'ActivePitches')) || '';
 		const swayPitch = (targetRec && safeField(targetRec, 'SwayPitch')) || '';
+		const physicalAbilityEntries = resolvePhysicalAbilityEntries(playerRec, playerType);
+		const archetypeLabel = resolveArchetypeLabel(playerType);
 		const physicalAbilities = [
 			safeField(playerRec, 'PhysicalAbility1') || '',
 			safeField(playerRec, 'PhysicalAbility2') || '',
@@ -830,24 +775,7 @@ async function main() {
 			safeField(playerRec, 'PhysicalAbility4') || '',
 			safeField(playerRec, 'PhysicalAbility5') || '',
 		];
-		const physicalAbilityNames = [1, 2, 3, 4, 5].map((slot) => {
-			const tier = String(physicalAbilities[slot - 1] || '').trim();
-			if (!tier || tier === 'None') {
-				return '';
-			}
-			const direct = getPhysicalAbilityName(playerRec, slot);
-			if (direct) return direct;
-			return resolveMappedPhysicalAbilityName(physicalAbilityMap, playerType, position, slot);
-		});
-		const physicalAbilityDisplay = physicalAbilities
-			.map((tier, idx) => {
-				const tierStr = String(tier || '').trim();
-				if (!tierStr || tierStr === 'None') return '';
-				const name = physicalAbilityNames[idx];
-				return name ? `${name} (${tierStr})` : tierStr;
-			})
-			.filter(Boolean)
-			.join(' | ');
+		const physicalAbilityDisplay = physicalAbilityEntries.map((e) => e.label).join(' | ');
 
 		seen.add(key);
 		const ratings = collectRatings(playerRec, recruitRec);
@@ -865,6 +793,7 @@ async function main() {
 			lastName,
 			position,
 			playerType,
+			archetypeLabel,
 			nationalRank: Number.isFinite(nationalRank) && nationalRank > 0 ? nationalRank : '',
 			stars,
 			overall: overall == null ? '' : overall,
@@ -885,12 +814,14 @@ async function main() {
 			physicalAbility3: physicalAbilities[2],
 			physicalAbility4: physicalAbilities[3],
 			physicalAbility5: physicalAbilities[4],
-			physicalAbilityName1: physicalAbilityNames[0],
-			physicalAbilityName2: physicalAbilityNames[1],
-			physicalAbilityName3: physicalAbilityNames[2],
-			physicalAbilityName4: physicalAbilityNames[3],
-			physicalAbilityName5: physicalAbilityNames[4],
+			physicalAbilityName1: physicalAbilityEntries.find((e) => e.slot === 1)?.name || '',
+			physicalAbilityName2: physicalAbilityEntries.find((e) => e.slot === 2)?.name || '',
+			physicalAbilityName3: physicalAbilityEntries.find((e) => e.slot === 3)?.name || '',
+			physicalAbilityName4: physicalAbilityEntries.find((e) => e.slot === 4)?.name || '',
+			physicalAbilityName5: physicalAbilityEntries.find((e) => e.slot === 5)?.name || '',
+			physicalAbilityEntries,
 			physicalAbilities: physicalAbilityDisplay,
+			onMyBoard: boardRow !== '' && boardRow != null,
 			boardRow,
 			targetRow,
 			playerRow,
@@ -898,70 +829,20 @@ async function main() {
 		});
 	};
 
-	if (allRecruitsMode) {
-		for (let recruitRow = 0; recruitRow < recruitT.records.length; recruitRow++) {
-			const recruitRec = recruitT.records[recruitRow];
-			if (!recruitRec || recruitRec.isEmpty) {
-				continue;
-			}
-
-			const playerRef = parseRef(safeField(recruitRec, 'Player'));
-			if (!playerRef || playerRef.tableId !== playerT.header.tableId) {
-				continue;
-			}
-
-			const playerRec = playerT.records[playerRef.row];
-			if (!playerRec || playerRec.isEmpty) {
-				continue;
-			}
-
-			appendRow({
-				recruitRec,
-				playerRec,
-				recruitRow,
-				playerRow: playerRef.row,
-				boardRow: '',
-				targetRow: '',
-				targetRec: null,
-			});
-		}
-	} else {
-		for (let boardRow = 0; boardRow < recruitTargetArrayT.header.recordCapacity; boardRow++) {
-			const boardRec = recruitTargetArrayT.records[boardRow];
-			if (!boardRec || boardRec.isEmpty) {
-				continue;
-			}
-
-			for (const col of cols) {
-				const targetRef = parseRef(safeField(boardRec, col));
-				if (!targetRef || targetRef.tableId !== recruitTargetT.header.tableId) {
-					continue;
-				}
-
-				const targetRec = recruitTargetT.records[targetRef.row];
-				if (!targetRec || targetRec.isEmpty) {
-					continue;
-				}
-
-				const recruitRef = parseRef(safeField(targetRec, 'Recruit'));
-				if (!recruitRef || recruitRef.tableId !== recruitT.header.tableId) {
-					continue;
-				}
-
-				const recruitRec = recruitT.records[recruitRef.row];
-				if (!recruitRec || recruitRec.isEmpty) {
-					continue;
-				}
-
-				const playerRef = parseRef(safeField(recruitRec, 'Player'));
-				const playerRec =
-					playerRef && playerRef.tableId === playerT.header.tableId ? playerT.records[playerRef.row] : null;
-
-				appendRow({
-					recruitRec,
-					playerRec,
-					recruitRow: recruitRef.row,
-					playerRow: playerRef ? playerRef.row : '',
+	// Index pipeline-board targets so all-class extracts can still attach pitches / board rows.
+	const boardTargetByRecruitRow = new Map();
+	for (let boardRow = 0; boardRow < recruitTargetArrayT.header.recordCapacity; boardRow++) {
+		const boardRec = recruitTargetArrayT.records[boardRow];
+		if (!boardRec || boardRec.isEmpty) continue;
+		for (const col of cols) {
+			const targetRef = parseRef(safeField(boardRec, col));
+			if (!targetRef || targetRef.tableId !== recruitTargetT.header.tableId) continue;
+			const targetRec = recruitTargetT.records[targetRef.row];
+			if (!targetRec || targetRec.isEmpty) continue;
+			const recruitRef = parseRef(safeField(targetRec, 'Recruit'));
+			if (!recruitRef || recruitRef.tableId !== recruitT.header.tableId) continue;
+			if (!boardTargetByRecruitRow.has(recruitRef.row)) {
+				boardTargetByRecruitRow.set(recruitRef.row, {
 					boardRow,
 					targetRow: targetRef.row,
 					targetRec,
@@ -970,7 +851,55 @@ async function main() {
 		}
 	}
 
-	rows.sort((a, b) => a.boardRow - b.boardRow || a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));
+	if (extractAllClass) {
+		for (let recruitRow = 0; recruitRow < recruitT.records.length; recruitRow++) {
+			const recruitRec = recruitT.records[recruitRow];
+			if (!recruitRec || recruitRec.isEmpty) continue;
+
+			const playerRef = parseRef(safeField(recruitRec, 'Player'));
+			if (!playerRef || playerRef.tableId !== playerT.header.tableId) continue;
+			const playerRec = playerT.records[playerRef.row];
+			if (!playerRec || playerRec.isEmpty) continue;
+
+			const boardHit = boardTargetByRecruitRow.get(recruitRow);
+			appendRow({
+				recruitRec,
+				playerRec,
+				recruitRow,
+				playerRow: playerRef.row,
+				boardRow: boardHit ? boardHit.boardRow : '',
+				targetRow: boardHit ? boardHit.targetRow : '',
+				targetRec: boardHit ? boardHit.targetRec : null,
+			});
+		}
+	} else {
+		for (const [recruitRow, boardHit] of boardTargetByRecruitRow.entries()) {
+			const recruitRec = recruitT.records[recruitRow];
+			if (!recruitRec || recruitRec.isEmpty) continue;
+			const playerRef = parseRef(safeField(recruitRec, 'Player'));
+			const playerRec =
+				playerRef && playerRef.tableId === playerT.header.tableId ? playerT.records[playerRef.row] : null;
+			if (!playerRec || playerRec.isEmpty) continue;
+
+			appendRow({
+				recruitRec,
+				playerRec,
+				recruitRow,
+				playerRow: playerRef.row,
+				boardRow: boardHit.boardRow,
+				targetRow: boardHit.targetRow,
+				targetRec: boardHit.targetRec,
+			});
+		}
+	}
+
+	rows.sort(
+		(a, b) =>
+			Number(b.onMyBoard) - Number(a.onMyBoard) ||
+			(Number(a.nationalRank) || 99999) - (Number(b.nationalRank) || 99999) ||
+			a.lastName.localeCompare(b.lastName) ||
+			a.firstName.localeCompare(b.firstName)
+	);
 
 	const csvLines = [
 		'firstName,lastName,position,playerType,stars,overall,devTrait,dealbreaker,offerCount,recruitStage,dealbreakerSchoolGrade,dealbreakerStatus,dealbreakerStatusDetail,idealPitch,activePitches,swayPitch,physicalAbility1,physicalAbility2,physicalAbility3,physicalAbility4,physicalAbility5,physicalAbilityName1,physicalAbilityName2,physicalAbilityName3,physicalAbilityName4,physicalAbilityName5,physicalAbilities,boardRow,targetRow,playerRow,recruitRow',
@@ -1064,8 +993,9 @@ async function main() {
 		console.log(
 			JSON.stringify({
 				savePath,
-				scope: allRecruitsMode ? 'all-recruits' : 'board-targets',
+				scope: boardOnlyMode ? 'board-only' : 'all-recruits',
 				rows: rows.length,
+				onMyBoard: rows.filter((r) => r.onMyBoard).length,
 				teamContext,
 				outPath,
 				jsonPath,

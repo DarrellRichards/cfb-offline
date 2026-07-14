@@ -29,10 +29,12 @@ extraResources:
       - extract-recruit-board.js
       - update-team-nil.js
       - update-team-cli.js
+      - update-poll-rankings.js
       - archive-cli.js
       - C27_468_2.gz
       - lib/**/*
       - data/physical-ability-map.json
+      - data/physical-ability-requirements.json
       - node_modules/**/*
       - web/package.json
       - web/.next/**/*

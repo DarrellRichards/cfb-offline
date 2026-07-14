@@ -1,52 +1,500 @@
 {
+  "_meta": {
+    "note": "Physical ability display names by PlayerType (archetype) and slot. Save stores tier only on PhysicalAbility1–5.",
+    "tiers": [
+      "Bronze",
+      "Silver",
+      "Gold",
+      "Platinum"
+    ],
+    "source": "CFB 27 physical ability lists (collegefootball.gg). Slot order is best-effort for types without Labs attribute thresholds."
+  },
   "byPlayerType": {
+    "QB_FIELDGENERAL": {
+      "slot1": "Resistance",
+      "slot2": "Step Up",
+      "slot3": "Sleight Of Hand",
+      "slot4": "Dot!",
+      "slot5": "On Time"
+    },
+    "QB_IMPROVISER": {
+      "slot1": "Off Platform",
+      "slot2": "Pull Down",
+      "slot3": "On Time",
+      "slot4": "Magician",
+      "slot5": "Mobile Deadeye"
+    },
+    "QB_SCRAMBLER": {
+      "slot1": "Downhill",
+      "slot2": "Extender",
+      "slot3": "Option King",
+      "slot4": "Dot!",
+      "slot5": "Mobile Resistance"
+    },
+    "QB_PURESCRAMBLER": {
+      "slot1": "Downhill",
+      "slot2": "Option King",
+      "slot3": "Shifty",
+      "slot4": "Side Step",
+      "slot5": "Workhorse"
+    },
+    "HB_ELUSIVEBACK": {
+      "slot1": "Recoup",
+      "slot2": "Shifty",
+      "slot3": "Side Step",
+      "slot4": "360",
+      "slot5": "Arm Bar"
+    },
+    "HB_ELUSIVEPOWER": {
+      "slot1": "Shifty",
+      "slot2": "Headfirst",
+      "slot3": "Side Step",
+      "slot4": "Downhill",
+      "slot5": "Arm Bar"
+    },
+    "HB_POWERBACK": {
+      "slot1": "Downhill",
+      "slot2": "Workhorse",
+      "slot3": "Battering Ram",
+      "slot4": "Ball Security",
+      "slot5": "Balanced"
+    },
+    "HB_POWERBLOCKING": {
+      "slot1": "Headfirst",
+      "slot2": "Balanced",
+      "slot3": "Sidekick",
+      "slot4": "Ball Security",
+      "slot5": "Strong Grip"
+    },
+    "HB_POWERRECEIVING": {
+      "slot1": "Balanced",
+      "slot2": "Arm Bar",
+      "slot3": "Safety Valve",
+      "slot4": "Headfirst",
+      "slot5": "Downhill"
+    },
+    "HB_RECEIVINGBACK": {
+      "slot1": "360",
+      "slot2": "Safety Valve",
+      "slot3": "Takeoff",
+      "slot4": "Side Step",
+      "slot5": "Recoup"
+    },
+    "FB_BLOCKING": {
+      "slot1": "Strong Grip",
+      "slot2": "Second Level",
+      "slot3": "Pocket Shield",
+      "slot4": "Sidekick",
+      "slot5": "Screen Enforcer"
+    },
+    "FB_UTILITY": {
+      "slot1": "Safety Valve",
+      "slot2": "Balanced",
+      "slot3": "Screen Enforcer",
+      "slot4": "Sidekick",
+      "slot5": "Recoup"
+    },
     "WR_DEEPTHREAT": {
-      "slot1": "Takeoff",
-      "slot2": "Deep Range"
+      "slot1": "Side Step",
+      "slot2": "Double Dip",
+      "slot3": "Take Off",
+      "slot4": "Recoup",
+      "slot5": "Shifty"
+    },
+    "WR_PHYSICAL": {
+      "slot1": "50/50",
+      "slot2": "Workhorse",
+      "slot3": "Balanced",
+      "slot4": "Headfirst",
+      "slot5": "Downhill"
+    },
+    "WR_PHYSICALBLOCKER": {
+      "slot1": "Second Level",
+      "slot2": "Outside Shield",
+      "slot3": "Strong Grip",
+      "slot4": "Workhorse",
+      "slot5": "Sure Hands"
+    },
+    "WR_PHYSICALROUTERUNNER": {
+      "slot1": "Downhill",
+      "slot2": "Press Pro",
+      "slot3": "Sure Hands",
+      "slot4": "50/50",
+      "slot5": "Cutter"
+    },
+    "WR_SHIFTYROUTERUNNER": {
+      "slot1": "360",
+      "slot2": "Cutter",
+      "slot3": "Double Dip",
+      "slot4": "Recoup",
+      "slot5": "Side Step"
+    },
+    "WR_PLAYMAKER": {
+      "slot1": "Cutter",
+      "slot2": "Lay Out",
+      "slot3": "Recoup",
+      "slot4": "Double Dip",
+      "slot5": "Sure Hands"
+    },
+    "WR_GADGETRECEIVER": {
+      "slot1": "Side Step",
+      "slot2": "Shifty",
+      "slot3": "Dot!",
+      "slot4": "Cutter",
+      "slot5": "Extender"
     },
     "WR_SLOT": {
-      "slot1": "Shifty",
-      "slot2": "Side Step"
+      "slot1": "360",
+      "slot2": "Cutter",
+      "slot3": "Double Dip",
+      "slot4": "Recoup",
+      "slot5": "Side Step"
     },
-    "QB_STRONGARM": {
-      "slot1": "Headstrong",
-      "slot2": "Dot"
+    "TE_BLOCKING": {
+      "slot1": "Strong Grip",
+      "slot2": "Quick Drop",
+      "slot3": "Outside Shield",
+      "slot4": "Pocket Shield",
+      "slot5": "Second Level"
     },
-    "KP_POWER": {
-      "slot1": "Deep Range"
+    "TE_POSSESSION": {
+      "slot1": "Sure Hands",
+      "slot2": "Wear Down",
+      "slot3": "Strong Grip",
+      "slot4": "Outside Shield",
+      "slot5": "Balanced"
+    },
+    "TE_POSSESSIONBLOCKING": {
+      "slot1": "Workhorse",
+      "slot2": "Strong Grip",
+      "slot3": "Sure Hands",
+      "slot4": "Outside Shield",
+      "slot5": "Battering Ram"
+    },
+    "TE_VERTICALTHREAT": {
+      "slot1": "Workhorse",
+      "slot2": "Balanced",
+      "slot3": "Take Off",
+      "slot4": "Recoup",
+      "slot5": "50/50"
+    },
+    "TE_PHYSICALROUTERUNNER": {
+      "slot1": "Balanced",
+      "slot2": "50/50",
+      "slot3": "Cutter",
+      "slot4": "Downhill",
+      "slot5": "Sure Hands"
+    },
+    "OT_AGILE": {
+      "slot1": "Screen Enforcer",
+      "slot2": "Quick Step",
+      "slot3": "Option Shield",
+      "slot4": "Outside Shield",
+      "slot5": "Quick Drop"
+    },
+    "OT_PASSPROTECTOR": {
+      "slot1": "Pocket Shield",
+      "slot2": "Quick Drop",
+      "slot3": "PA Shield",
+      "slot4": "Strong Grip",
+      "slot5": "Wear Down"
+    },
+    "OT_POWER": {
+      "slot1": "Strong Grip",
+      "slot2": "Workhorse",
+      "slot3": "Second Level",
+      "slot4": "Inside Shield",
+      "slot5": "Ground N Pound"
+    },
+    "OT_WELLROUNDED": {
+      "slot1": "Pocket Shield",
+      "slot2": "Outside Shield",
+      "slot3": "Strong Grip",
+      "slot4": "Option Shield",
+      "slot5": "Inside Shield"
+    },
+    "G_AGILE": {
+      "slot1": "Screen Enforcer",
+      "slot2": "Quick Step",
+      "slot3": "Option Shield",
+      "slot4": "Outside Shield",
+      "slot5": "Quick Drop"
+    },
+    "G_PASSPROTECTOR": {
+      "slot1": "Pocket Shield",
+      "slot2": "Quick Drop",
+      "slot3": "PA Shield",
+      "slot4": "Strong Grip",
+      "slot5": "Wear Down"
+    },
+    "G_POWER": {
+      "slot1": "Strong Grip",
+      "slot2": "Workhorse",
+      "slot3": "Second Level",
+      "slot4": "Inside Shield",
+      "slot5": "Ground N Pound"
+    },
+    "G_WELLROUNDED": {
+      "slot1": "Pocket Shield",
+      "slot2": "Outside Shield",
+      "slot3": "Strong Grip",
+      "slot4": "Option Shield",
+      "slot5": "Inside Shield"
+    },
+    "C_AGILE": {
+      "slot1": "Screen Enforcer",
+      "slot2": "Quick Step",
+      "slot3": "Option Shield",
+      "slot4": "Outside Shield",
+      "slot5": "Quick Drop"
+    },
+    "C_PASSPROTECTOR": {
+      "slot1": "Pocket Shield",
+      "slot2": "Quick Drop",
+      "slot3": "PA Shield",
+      "slot4": "Strong Grip",
+      "slot5": "Wear Down"
+    },
+    "C_POWER": {
+      "slot1": "Strong Grip",
+      "slot2": "Workhorse",
+      "slot3": "Second Level",
+      "slot4": "Inside Shield",
+      "slot5": "Ground N Pound"
+    },
+    "C_WELLROUNDED": {
+      "slot1": "Pocket Shield",
+      "slot2": "Outside Shield",
+      "slot3": "Strong Grip",
+      "slot4": "Option Shield",
+      "slot5": "Inside Shield"
+    },
+    "DE_POWERRUSHER": {
+      "slot1": "Pocket Disruptor",
+      "slot2": "Duress",
+      "slot3": "Grip Breaker",
+      "slot4": "Workhorse",
+      "slot5": "Take Down"
+    },
+    "DE_PUREPOWER": {
+      "slot1": "Grip Breaker",
+      "slot2": "Pocket Disruptor",
+      "slot3": "Inside Disruptor",
+      "slot4": "Workhorse",
+      "slot5": "Hammer"
+    },
+    "DE_RUNSTOPPER": {
+      "slot1": "Grip Breaker",
+      "slot2": "Inside Disruptor",
+      "slot3": "Outside Disruptor",
+      "slot4": "Option Disruptor",
+      "slot5": "Workhorse"
+    },
+    "DE_SMALLERSPEEDRUSHER": {
+      "slot1": "Quick Jump",
+      "slot2": "Duress",
+      "slot3": "Take Down",
+      "slot4": "Pocket Disruptor",
+      "slot5": "Recoup"
+    },
+    "DT_POWERRUSHER": {
+      "slot1": "Pocket Disruptor",
+      "slot2": "Duress",
+      "slot3": "Grip Breaker",
+      "slot4": "Workhorse",
+      "slot5": "Take Down"
+    },
+    "DT_PUREPOWER": {
+      "slot1": "Grip Breaker",
+      "slot2": "Pocket Disruptor",
+      "slot3": "Inside Disruptor",
+      "slot4": "Workhorse",
+      "slot5": "Hammer"
+    },
+    "DT_NOSETACKLE": {
+      "slot1": "Grip Breaker",
+      "slot2": "Inside Disruptor",
+      "slot3": "Outside Disruptor",
+      "slot4": "Option Disruptor",
+      "slot5": "Workhorse"
+    },
+    "DT_RUNSTOPPER": {
+      "slot1": "Grip Breaker",
+      "slot2": "Inside Disruptor",
+      "slot3": "Outside Disruptor",
+      "slot4": "Option Disruptor",
+      "slot5": "Workhorse"
+    },
+    "DT_SPEEDRUSHER": {
+      "slot1": "Quick Jump",
+      "slot2": "Duress",
+      "slot3": "Take Down",
+      "slot4": "Pocket Disruptor",
+      "slot5": "Recoup"
+    },
+    "OLB_PASSCOVERAGE": {
+      "slot1": "House Call",
+      "slot2": "Knockout",
+      "slot3": "Bouncer",
+      "slot4": "Robber",
+      "slot5": "Wrap Up"
+    },
+    "OLB_POWERRUSHER": {
+      "slot1": "Take Down",
+      "slot2": "Workhorse",
+      "slot3": "Blow Up",
+      "slot4": "Wrap Up",
+      "slot5": "Hammer"
+    },
+    "OLB_RUNSTOPPER": {
+      "slot1": "Grip Breaker",
+      "slot2": "Wrap Up",
+      "slot3": "Aftershock",
+      "slot4": "Blow Up",
+      "slot5": "Hammer"
+    },
+    "MLB_FIELDGENERAL": {
+      "slot1": "Take Down",
+      "slot2": "Workhorse",
+      "slot3": "Blow Up",
+      "slot4": "Wrap Up",
+      "slot5": "Hammer"
+    },
+    "MLB_PASSCOVERAGE": {
+      "slot1": "House Call",
+      "slot2": "Knockout",
+      "slot3": "Bouncer",
+      "slot4": "Robber",
+      "slot5": "Wrap Up"
+    },
+    "MLB_RUNSTOPPER": {
+      "slot1": "Grip Breaker",
+      "slot2": "Wrap Up",
+      "slot3": "Aftershock",
+      "slot4": "Blow Up",
+      "slot5": "Hammer"
+    },
+    "CB_MANTOMAN": {
+      "slot1": "Blanket Coverage",
+      "slot2": "Jammer",
+      "slot3": "House Call",
+      "slot4": "Ball Hawk",
+      "slot5": "Knockout"
+    },
+    "CB_SLOT": {
+      "slot1": "Jammer",
+      "slot2": "Blanket Coverage",
+      "slot3": "Lay Out",
+      "slot4": "Wrap Up",
+      "slot5": "Quick Jump"
+    },
+    "CB_ZONE": {
+      "slot1": "Knockout",
+      "slot2": "Lay Out",
+      "slot3": "House Call",
+      "slot4": "Ball Hawk",
+      "slot5": "Bouncer"
+    },
+    "CB_HYBRIDCORNER": {
+      "slot1": "Wrap Up",
+      "slot2": "Robber",
+      "slot3": "Knockout",
+      "slot4": "Blanket Coverage",
+      "slot5": "Ball Hawk"
+    },
+    "S_HYBRID": {
+      "slot1": "Wrap Up",
+      "slot2": "Hammer",
+      "slot3": "Knockout",
+      "slot4": "Aftershock",
+      "slot5": "Blow Up"
+    },
+    "S_RUNSUPPORT": {
+      "slot1": "Aftershock",
+      "slot2": "Wrap Up",
+      "slot3": "Hammer",
+      "slot4": "Blow Up",
+      "slot5": "Workhorse"
+    },
+    "S_ZONE": {
+      "slot1": "Ball Hawk",
+      "slot2": "Lay Out",
+      "slot3": "House Call",
+      "slot4": "Robber",
+      "slot5": "Knockout"
     },
     "KP_ACCURATE": {
-      "slot1": "Clutch Kicker"
+      "slot1": "Chip Shot",
+      "slot2": "Deep Range",
+      "slot3": "Mega Leg"
+    },
+    "KP_POWER": {
+      "slot1": "Deep Range",
+      "slot2": "Mega Leg",
+      "slot3": "Coffin Corner"
     }
   },
-  "byPosition": {
-    "K": {
-      "slot1": "Deep Range"
-    },
-    "P": {
-      "slot1": "Coffin Corner"
-    }
-  },
-  "byPositionGroup": {
-    "OL": {
-      "slot1": "Second Level",
-      "slot2": "Quick Drop"
-    },
-    "DL": {
-      "slot1": "Pocket Disruptor",
-      "slot2": "Grip Breaker"
-    },
-    "LB": {
-      "slot1": "Hammer",
-      "slot2": "Robber"
-    },
-    "DB": {
-      "slot1": "Jammer",
-      "slot2": "House Call"
-    },
-    "RB": {
-      "slot1": "Side Step",
-      "slot2": "Headfirst"
-    }
+  "aliases": {
+    "QB_FIELDGENERAL": "QB|Pocket Passer",
+    "QB_IMPROVISER": "QB|Backfield Creator",
+    "QB_SCRAMBLER": "QB|Dual Threat",
+    "QB_PURESCRAMBLER": "QB|Pure Runner",
+    "HB_ELUSIVEBACK": "HB|East/West Playmaker",
+    "HB_ELUSIVEPOWER": "HB|Elusive Bruiser",
+    "HB_POWERBACK": "HB|Contact Seeker",
+    "HB_POWERBLOCKING": "HB|North/South Blocker",
+    "HB_POWERRECEIVING": "HB|North/South Receiver",
+    "HB_RECEIVINGBACK": "HB|Backfield Threat",
+    "FB_BLOCKING": "FB|Blocking",
+    "FB_UTILITY": "FB|Utility",
+    "WR_DEEPTHREAT": "WR|Speedster",
+    "WR_PHYSICAL": "WR|Contested Specialist",
+    "WR_PHYSICALBLOCKER": "WR|Gritty Possession",
+    "WR_PHYSICALROUTERUNNER": "WR|Physical Route Runner",
+    "WR_SHIFTYROUTERUNNER": "WR|Elusive Route Runner",
+    "WR_PLAYMAKER": "WR|Route Artist",
+    "WR_GADGETRECEIVER": "WR|Gadget",
+    "WR_SLOT": "WR|Elusive Route Runner",
+    "TE_BLOCKING": "TE|Pure Blocker",
+    "TE_POSSESSION": "TE|Pure Possession",
+    "TE_POSSESSIONBLOCKING": "TE|Gritty Possession",
+    "TE_VERTICALTHREAT": "TE|Vertical Threat",
+    "TE_PHYSICALROUTERUNNER": "TE|Physical Route Runner",
+    "OT_AGILE": "OL|Agile",
+    "OT_PASSPROTECTOR": "OL|Pass Protector",
+    "OT_POWER": "OL|Raw Strength",
+    "OT_WELLROUNDED": "OL|Well Rounded",
+    "G_AGILE": "OL|Agile",
+    "G_PASSPROTECTOR": "OL|Pass Protector",
+    "G_POWER": "OL|Raw Strength",
+    "G_WELLROUNDED": "OL|Well Rounded",
+    "C_AGILE": "OL|Agile",
+    "C_PASSPROTECTOR": "OL|Pass Protector",
+    "C_POWER": "OL|Raw Strength",
+    "C_WELLROUNDED": "OL|Well Rounded",
+    "DE_POWERRUSHER": "DL|Power Rusher",
+    "DE_PUREPOWER": "DL|Pure Power",
+    "DE_RUNSTOPPER": "DL|Edge Setter",
+    "DE_SMALLERSPEEDRUSHER": "DL|Speed Rusher",
+    "DT_POWERRUSHER": "DL|Power Rusher",
+    "DT_PUREPOWER": "DL|Pure Power",
+    "DT_NOSETACKLE": "DL|Edge Setter",
+    "DT_RUNSTOPPER": "DL|Edge Setter",
+    "DT_SPEEDRUSHER": "DL|Speed Rusher",
+    "OLB_PASSCOVERAGE": "LB|Lurker",
+    "OLB_POWERRUSHER": "LB|Signal Caller",
+    "OLB_RUNSTOPPER": "LB|Thumper",
+    "MLB_FIELDGENERAL": "LB|Signal Caller",
+    "MLB_PASSCOVERAGE": "LB|Lurker",
+    "MLB_RUNSTOPPER": "LB|Thumper",
+    "CB_MANTOMAN": "CB|Bump and Run",
+    "CB_SLOT": "CB|Boundary",
+    "CB_ZONE": "CB|Zone",
+    "CB_HYBRIDCORNER": "CB|Field",
+    "S_HYBRID": "S|Hybrid",
+    "S_RUNSUPPORT": "S|Box Specialist",
+    "S_ZONE": "S|Coverage Specialist",
+    "KP_ACCURATE": "K|Accurate",
+    "KP_POWER": "K|Power"
   }
 }
