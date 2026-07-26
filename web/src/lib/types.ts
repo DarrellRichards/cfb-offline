@@ -140,6 +140,93 @@ export type RecruitBoardSnapshot = {
   recruits: Array<Record<string, unknown>>;
 };
 
+export type RosterPlayerSeasonStats = {
+  seasonYear: number;
+  rawSeasonYear?: number;
+  isCurrent?: boolean;
+  gamesPlayed: number;
+  offense: {
+    seasYear?: number;
+    gamesPlayed?: number;
+    passYards?: number;
+    passAttempts?: number;
+    passCompletions?: number;
+    passTds?: number;
+    passInts?: number;
+    rushYards?: number;
+    rushAttempts?: number;
+    rushTds?: number;
+    receiveYards?: number;
+    receiveCatches?: number;
+    receiveTds?: number;
+  } | null;
+  defense: {
+    seasYear?: number;
+    gamesPlayed?: number;
+    tackles?: number;
+    sacks?: number;
+    ints?: number;
+    tfl?: number;
+    deflections?: number;
+    forcedFumbles?: number;
+  } | null;
+  kicking: {
+    seasYear?: number;
+    gamesPlayed?: number;
+    fgMade?: number;
+    fgAttempts?: number;
+    fgLong?: number;
+    xpMade?: number;
+    xpAttempts?: number;
+    puntYards?: number;
+    puntAttempts?: number;
+  } | null;
+};
+
+export type RosterPlayer = {
+  playerRow: number;
+  teamIndex: number;
+  teamDisplayName: string;
+  teamLabel: string;
+  firstName: string;
+  lastName: string;
+  position: string;
+  overall: number | null;
+  jersey: number | null;
+  schoolYear: string;
+  redshirtStatus: string;
+  height: number | null;
+  weight: number | null;
+  yearsPlayed: number | null;
+  playerType: string;
+  archetypeLabel: string;
+  devTrait: string;
+  physicalAbilities: string;
+  physicalAbilityEntries: Array<{
+    slot: number;
+    name: string;
+    tier: string;
+    label: string;
+  }>;
+  ratings: Record<string, number>;
+  seasons?: RosterPlayerSeasonStats[];
+};
+
+export type RosterSnapshot = {
+  generatedAt: string;
+  savePath: string;
+  currentSeasonYear?: number | null;
+  teamCount: number;
+  playerCount: number;
+  teams: Array<{
+    teamIndex: number;
+    displayName: string;
+    label: string;
+    playerCount: number;
+  }>;
+  players: RosterPlayer[];
+};
+
 export type AwardPerson = {
   firstName?: string;
   lastName?: string;

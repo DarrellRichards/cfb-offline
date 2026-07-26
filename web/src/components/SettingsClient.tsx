@@ -3,7 +3,7 @@
 import { useSettings } from './SettingsProvider';
 import type { AppSettings } from '@/lib/settings';
 
-const OPTIONS: Array<{
+const TOGGLE_OPTIONS: Array<{
   key: keyof AppSettings;
   title: string;
   description: string;
@@ -35,6 +35,12 @@ const OPTIONS: Array<{
     description:
       'Allow reordering Media and Coaches poll rankings and writing them back to your dynasty save. Off by default.',
   },
+  {
+    key: 'autoNews',
+    title: 'Auto News',
+    description:
+      'After each extract, automatically write desk stories for the current dynasty week from scores, GOTW, polls, and awards.',
+  },
 ];
 
 export function SettingsClient() {
@@ -51,8 +57,8 @@ export function SettingsClient() {
       </div>
 
       <div className="panel settingsList">
-        {OPTIONS.map((opt) => {
-          const on = settings[opt.key];
+        {TOGGLE_OPTIONS.map((opt) => {
+          const on = Boolean(settings[opt.key]);
           return (
             <label key={opt.key} className="settingsRow">
               <div>
@@ -67,13 +73,36 @@ export function SettingsClient() {
                 aria-label={opt.title}
                 disabled={!ready}
                 data-on={on}
-                onClick={() => setSetting(opt.key, !on)}
+                onClick={() => setSetting(opt.key, !on as AppSettings[typeof opt.key])}
               >
                 <span className="settingsToggleThumb" />
               </button>
             </label>
           );
         })}
+
+        <label className="settingsRow">
+          <div>
+            <div className="settingsTitle">Stories per week</div>
+            <div className="settingsDesc">
+              How many auto stories to create for each dynasty week (1–12). Default is 5.
+            </div>
+          </div>
+          <input
+            className="settingsNumber"
+            type="number"
+            min={1}
+            max={12}
+            value={settings.autoNewsCount}
+            disabled={!ready || !settings.autoNews}
+            aria-label="Stories per week"
+            onChange={(e) => {
+              const next = Number(e.target.value);
+              if (!Number.isFinite(next)) return;
+              setSetting('autoNewsCount', Math.min(12, Math.max(1, Math.trunc(next))));
+            }}
+          />
+        </label>
       </div>
 
       <div className="row" style={{ marginTop: 18 }}>

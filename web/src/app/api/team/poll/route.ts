@@ -1,19 +1,16 @@
 import { spawnSync } from 'child_process';
 import path from 'path';
 import { NextRequest, NextResponse } from 'next/server';
-import { resolveInputPath } from '@/lib/saves';
 import { REPO_ROOT } from '@/lib/data';
+import { assertWritableDynastyPath } from '@/lib/uploads';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const savePath = resolveInputPath(String(body.savePath || '').trim());
+    const savePath = assertWritableDynastyPath(String(body.savePath || '').trim());
     const poll = String(body.poll || '').trim().toLowerCase();
     const entries = Array.isArray(body.entries) ? body.entries : body.rankings;
 
-    if (!savePath) {
-      return NextResponse.json({ error: 'Save file not found.' }, { status: 400 });
-    }
     if (poll !== 'media' && poll !== 'coaches') {
       return NextResponse.json({ error: 'Poll must be media or coaches.' }, { status: 400 });
     }
@@ -38,6 +35,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(JSON.parse((run.stdout || '').trim()));
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const status = typeof (err as { status?: number })?.status === 'number' ? (err as { status: number }).status : 500;
+    return NextResponse.json({ error: message, code: (err as { code?: string })?.code }, { status });
   }
 }

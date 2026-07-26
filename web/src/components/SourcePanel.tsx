@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import { ClientDate } from '@/lib/ClientDate';
 import { EXTRACT_STEPS, useExtract } from './ExtractProvider';
 
@@ -17,13 +18,16 @@ export function SourcePanel() {
     setSavePath,
     lastSaveName,
     isDesktop,
+    viewOnly,
     refreshSaves,
     pickLatest,
     pickSaveFile,
+    uploadAndExtract,
     extractLatest,
     extractSelected,
     extractPath,
   } = useExtract();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!panelOpen) return null;
 
@@ -48,6 +52,13 @@ export function SourcePanel() {
     await refreshSaves();
   }
 
+  async function onUploadSelected(fileList: FileList | null) {
+    const file = fileList?.[0];
+    if (!file) return;
+    await uploadAndExtract(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
   return (
     <>
       <div className="drawerBackdrop" onClick={busy ? undefined : closePanel} />
@@ -55,11 +66,11 @@ export function SourcePanel() {
         <div className="drawerHead">
           <div>
             <p className="eyebrow">Dynasty source</p>
-            <h2>{isDesktop ? 'Select a save' : 'Load your save'}</h2>
+            <h2>{isDesktop ? 'Select a save' : 'Upload your save'}</h2>
             <p className="drawerLead">
               {isDesktop
                 ? 'Pick a DYNASTY file to refresh league, schedule, rankings, stats, and recruiting.'
-                : 'One click pulls league, schedule, rankings, stats, and recruiting into the site.'}
+                : 'Upload a DYNASTY file to browse the desk. Hosted uploads are view-only — edits are not written back to the save.'}
             </p>
           </div>
           <button type="button" className="buttonGhost" onClick={closePanel} disabled={busy}>
@@ -69,11 +80,13 @@ export function SourcePanel() {
 
         <div className="extractHeroAction">
           <div>
-            <div className="extractLatestLabel">{isDesktop ? 'Selected save' : 'Latest detected'}</div>
+            <div className="extractLatestLabel">
+              {isDesktop ? 'Selected save' : viewOnly ? 'Uploaded save (view-only)' : 'Selected save'}
+            </div>
             <div className="extractLatestName">
               {lastSaveName || latest?.name || 'No dynasty file selected'}
             </div>
-            {latest && !isDesktop && (
+            {latest && !isDesktop && !viewOnly && (
               <div className="extractLatestMeta">
                 Updated <ClientDate value={latest.mtimeMs} />
               </div>
@@ -90,14 +103,33 @@ export function SourcePanel() {
                 {busy ? 'Extracting…' : 'Browse & extract'}
               </button>
             ) : (
-              <button
-                type="button"
-                className="button buttonLarge"
-                onClick={() => extractLatest()}
-                disabled={busy || !latest}
-              >
-                {busy ? 'Extracting…' : 'Extract latest'}
-              </button>
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".save,.db,.franchise,DYNASTY*"
+                  hidden
+                  onChange={(e) => void onUploadSelected(e.target.files)}
+                />
+                <button
+                  type="button"
+                  className="button buttonLarge"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={busy}
+                >
+                  {busy ? 'Working…' : 'Upload & extract'}
+                </button>
+                {latest ? (
+                  <button
+                    type="button"
+                    className="buttonGhost"
+                    onClick={() => extractLatest()}
+                    disabled={busy}
+                  >
+                    Use server save
+                  </button>
+                ) : null}
+              </>
             )}
           </div>
         </div>

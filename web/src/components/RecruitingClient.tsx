@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ClientDate } from '@/lib/ClientDate';
 import { formatNumber } from '@/lib/format';
+import { useExtract } from './ExtractProvider';
 import { useSettings } from './SettingsProvider';
 
 type Recruit = {
@@ -89,9 +90,10 @@ export function RecruitingClient({
 }) {
   const router = useRouter();
   const { settings, ready } = useSettings();
+  const { canWriteBack } = useExtract();
   const showDevTraits = settings.recruitingDevTraits;
   const showOverall = settings.recruitingOverall;
-  const allowNilUpdates = settings.nilUpdates;
+  const allowNilUpdates = settings.nilUpdates && canWriteBack;
 
   const [search, setSearch] = useState('');
   const [position, setPosition] = useState('');
@@ -472,6 +474,17 @@ export function RecruitingClient({
                 <td>{humanize(r.dealbreaker)}</td>
               </tr>
             ))}
+            {visible.length === 0 && (
+              <tr>
+                <td colSpan={tableColumns.length}>
+                  {boardScope === 'mine'
+                    ? recruits.some((r) => r.onMyBoard)
+                      ? 'No recruits match these filters on your board.'
+                      : 'No recruits marked on your board in this extract. Re-extract Recruiting to refresh your board.'
+                    : 'No recruits match these filters.'}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
         {visible.length > 500 && (
