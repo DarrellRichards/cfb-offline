@@ -741,6 +741,116 @@ table.dataTable tbody tr:hover {
   min-width: 140px;
 }
 
+.ratingFilterWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.ratingFilterWrap > .buttonGhost[data-active='true'] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ratingFilterBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: transparent;
+}
+
+.ratingFilterPopup {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 50;
+  width: min(420px, 92vw);
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-strong);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+}
+
+.ratingFilterHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.ratingFilterHead p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.ratingFilterGrid {
+  display: grid;
+  gap: 8px;
+  max-height: 340px;
+  overflow: auto;
+}
+
+.ratingFilterRow {
+  display: grid;
+  grid-template-columns: 1fr 88px;
+  gap: 10px;
+  align-items: center;
+}
+
+.ratingFilterRow span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ratingFilterRow em {
+  font-style: normal;
+  color: var(--muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ratingFilterRow input {
+  min-width: 0;
+  width: 100%;
+}
+
+.ratingFilterActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.ratingFilterChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -4px 0 14px;
+}
+
+.ratingFilterChip {
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--accent) 12%, var(--panel-strong));
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.ratingFilterChip:hover {
+  border-color: var(--accent);
+}
+
 .sourcePanel textarea,
 .newsCompose textarea {
   width: 100%;

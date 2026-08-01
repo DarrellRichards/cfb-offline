@@ -12,14 +12,6 @@ type NewsBootstrap = {
   articles: NewsArticle[];
 };
 
-type AiEntitlement = {
-  unlocked: boolean;
-  reason: string;
-  providerReady: boolean;
-  provider: string;
-  mode: string;
-};
-
 type DraftForm = {
   id?: string;
   seasonYear: number;
@@ -57,8 +49,6 @@ export function NewsClient({ initial }: { initial: NewsBootstrap }) {
   const [status, setStatus] = useState('');
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<DraftForm>(() => emptyDraft(defaultYear, defaultWeek, weekType));
-  const [entitlement, setEntitlement] = useState<AiEntitlement | null>(null);
-  const [licenseKey, setLicenseKey] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const selected = useMemo(
@@ -76,13 +66,6 @@ export function NewsClient({ initial }: { initial: NewsBootstrap }) {
     if (json.currentWeekType) setWeekType(json.currentWeekType);
     return json as NewsBootstrap;
   }, [seasonYear, week]);
-
-  useEffect(() => {
-    fetch('/api/news/generate')
-      .then((res) => res.json())
-      .then((json) => setEntitlement(json.entitlement || null))
-      .catch(() => setEntitlement(null));
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -176,66 +159,6 @@ export function NewsClient({ initial }: { initial: NewsBootstrap }) {
     }
   }
 
-  async function unlockAi() {
-    setBusy(true);
-    setStatus('Checking license…');
-    try {
-      const res = await fetch('/api/news/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'unlock', licenseKey }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Unlock failed');
-      setEntitlement(json.entitlement);
-      setLicenseKey('');
-      setStatus('AI News unlocked on this device.');
-    } catch (err) {
-      setStatus(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function generateAiDraft() {
-    setBusy(true);
-    setStatus('Generating AI draft from this week’s extract…');
-    try {
-      const res = await fetch('/api/news/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'generate',
-          seasonYear,
-          week,
-          weekType,
-          save: false,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        if (json.entitlement) setEntitlement(json.entitlement);
-        throw new Error(json.error || 'AI generate failed');
-      }
-      setDraft({
-        seasonYear,
-        week,
-        weekType,
-        title: json.draft.title,
-        dek: json.draft.dek || '',
-        body: json.draft.body,
-        source: 'ai',
-      });
-      setEditing(true);
-      setSelectedId(null);
-      setStatus(`AI draft ready (${json.draft.provider}${json.draft.model ? ` · ${json.draft.model}` : ''}). Edit, then save.`);
-    } catch (err) {
-      setStatus(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
     <section className="section" style={{ marginTop: 8 }}>
       <div className="sectionHead">
@@ -298,10 +221,7 @@ export function NewsClient({ initial }: { initial: NewsBootstrap }) {
               }}
             >
               <div className="newsCardMeta">
-                <span>
-                  Week {article.week}
-                  {article.source === 'ai' ? ' · AI' : article.source === 'auto' ? ' · Auto' : ''}
-                </span>
+                <span>Week {article.week}</span>
                 <span>{new Date(article.updatedAt).toLocaleDateString()}</span>
               </div>
               <strong>{article.title}</strong>
@@ -392,14 +312,7 @@ export function NewsClient({ initial }: { initial: NewsBootstrap }) {
             <>
               <div className="sectionHead" style={{ marginBottom: 12 }}>
                 <div>
-                  <p className="eyebrow">
-                    {selected.seasonYear} · Week {selected.week}
-                    {selected.source === 'ai'
-                      ? ' · AI'
-                      : selected.source === 'auto'
-                        ? ' · Auto'
-                        : ' · Manual'}
-                  </p>
+                  <p className="eyebrow">{selected.seasonYear} · Week {selected.week}</p>
                   <h3 style={{ margin: 0 }}>{selected.title}</h3>
                   {selected.dek ? <p style={{ margin: '8px 0 0', color: 'var(--muted)' }}>{selected.dek}</p> : null}
                 </div>
@@ -416,41 +329,6 @@ export function NewsClient({ initial }: { initial: NewsBootstrap }) {
           ) : (
             <div className="emptyState">Select an article or write a new one for this week.</div>
           )}
-
-          <div className="newsAiPanel">
-            <strong>AI News (paid add-on)</strong>
-            <p>
-              {entitlement?.unlocked
-                ? entitlement.providerReady
-                  ? 'License unlocked. Generate a draft from this week’s scores, GOTW, polls, and awards.'
-                  : 'License unlocked, but set OPENAI_API_KEY on the server to generate drafts.'
-                : 'Manual writing is free. AI drafting is a paid unlock — enter a CFB-AI-… license key, or enable CFB_AI_NEWS_ENABLED for the install.'}
-            </p>
-            {!entitlement?.unlocked && (
-              <div className="row">
-                <input
-                  value={licenseKey}
-                  onChange={(e) => setLicenseKey(e.target.value)}
-                  placeholder="CFB-AI-…"
-                  disabled={busy}
-                  style={{ minWidth: 220 }}
-                />
-                <button type="button" className="buttonGhost" onClick={() => void unlockAi()} disabled={busy || !licenseKey}>
-                  Unlock
-                </button>
-              </div>
-            )}
-            <div className="row" style={{ marginTop: 10 }}>
-              <button
-                type="button"
-                className="buttonGhost"
-                onClick={() => void generateAiDraft()}
-                disabled={busy || !entitlement?.unlocked}
-              >
-                Generate AI draft
-              </button>
-            </div>
-          </div>
 
           {status ? <div className="statusLine">{status}</div> : null}
         </div>

@@ -157,6 +157,44 @@ function getPlayerType(playerRec) {
 	return String(v).trim();
 }
 
+function getRecruitClass(recruitRec) {
+	return String(safeField(recruitRec, 'Class') || '').trim();
+}
+
+function classifyProspectSource(recruitClass) {
+	const raw = String(recruitClass || '').trim();
+	if (/^Transfer_/i.test(raw)) return 'transfer';
+	if (/^JuniorCollege_/i.test(raw)) return 'juco';
+	if (/^HighSchool$/i.test(raw) || !raw) return 'highSchool';
+	return 'other';
+}
+
+function getClassYear(playerRec, recruitClass) {
+	const fromPlayer = String(safeField(playerRec, 'SchoolYear') || '').trim();
+	if (fromPlayer) return fromPlayer;
+	const cls = String(recruitClass || '');
+	const match = cls.match(/_(Freshman|Sophomore|Junior|Senior)$/i);
+	return match ? match[1] : '';
+}
+
+function resolveTransferFrom(playerRec, teamLookupByIndex) {
+	const prevTeamIndex = Number(safeField(playerRec, 'PrevTeamIndex'));
+	if (!Number.isFinite(prevTeamIndex) || prevTeamIndex < 0 || prevTeamIndex === 255) {
+		return { transferFrom: '', transferFromTeamIndex: null };
+	}
+	const hit = teamLookupByIndex.get(prevTeamIndex);
+	if (!hit?.rec) {
+		return { transferFrom: '', transferFromTeamIndex: prevTeamIndex };
+	}
+	const displayName = String(
+		safeField(hit.rec, 'DisplayName') || safeField(hit.rec, 'LongName') || ''
+	).trim();
+	return {
+		transferFrom: displayName,
+		transferFromTeamIndex: prevTeamIndex,
+	};
+}
+
 function parseDirectStars(value) {
 	if (value == null) {
 		return null;
@@ -814,6 +852,10 @@ async function main() {
 			safeField(playerRec, 'PhysicalAbility5') || '',
 		];
 		const physicalAbilityDisplay = physicalAbilityEntries.map((e) => e.label).join(' | ');
+		const recruitClass = getRecruitClass(recruitRec);
+		const prospectSource = classifyProspectSource(recruitClass);
+		const classYear = getClassYear(playerRec, recruitClass);
+		const { transferFrom, transferFromTeamIndex } = resolveTransferFrom(playerRec, teamLookupByIndex);
 
 		seen.add(key);
 		const ratings = collectRatings(playerRec, recruitRec);
@@ -842,6 +884,13 @@ async function main() {
 			dealbreakerSchoolGrade,
 			dealbreakerStatus: dealbreakerStatusMeta.status,
 			dealbreakerStatusDetail: dealbreakerStatusMeta.detail,
+			recruitClass,
+			prospectSource,
+			classYear,
+			isTransfer: prospectSource === 'transfer',
+			isJuco: prospectSource === 'juco',
+			transferFrom: prospectSource === 'juco' && !transferFrom ? 'JUCO' : transferFrom,
+			transferFromTeamIndex,
 			ratings,
 			topSchools,
 			idealPitch,
@@ -971,7 +1020,7 @@ async function main() {
 	);
 
 	const csvLines = [
-		'firstName,lastName,position,playerType,stars,overall,devTrait,dealbreaker,offerCount,recruitStage,dealbreakerSchoolGrade,dealbreakerStatus,dealbreakerStatusDetail,idealPitch,activePitches,swayPitch,physicalAbility1,physicalAbility2,physicalAbility3,physicalAbility4,physicalAbility5,physicalAbilityName1,physicalAbilityName2,physicalAbilityName3,physicalAbilityName4,physicalAbilityName5,physicalAbilities,boardRow,targetRow,playerRow,recruitRow',
+		'firstName,lastName,position,playerType,stars,overall,devTrait,dealbreaker,offerCount,recruitStage,dealbreakerSchoolGrade,dealbreakerStatus,dealbreakerStatusDetail,recruitClass,prospectSource,classYear,transferFrom,idealPitch,activePitches,swayPitch,physicalAbility1,physicalAbility2,physicalAbility3,physicalAbility4,physicalAbility5,physicalAbilityName1,physicalAbilityName2,physicalAbilityName3,physicalAbilityName4,physicalAbilityName5,physicalAbilities,boardRow,targetRow,playerRow,recruitRow',
 	];
 	for (const r of rows) {
 		csvLines.push(
@@ -989,6 +1038,10 @@ async function main() {
 					r.dealbreakerSchoolGrade,
 					r.dealbreakerStatus,
 					r.dealbreakerStatusDetail,
+				r.recruitClass,
+				r.prospectSource,
+				r.classYear,
+				r.transferFrom,
 				r.idealPitch,
 				r.activePitches,
 				r.swayPitch,

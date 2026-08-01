@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ClientDate } from '@/lib/ClientDate';
 import { formatNumber } from '@/lib/format';
+import { buildAllAttributes, buildKeyAttributes, listKeyAttributeMeta } from '@/lib/recruit-attributes';
 import { useExtract } from './ExtractProvider';
 import { useSettings } from './SettingsProvider';
 
@@ -23,6 +24,13 @@ type Recruit = {
   dealbreakerSchoolGrade?: string;
   dealbreakerStatus?: string;
   dealbreakerStatusDetail?: string;
+  recruitClass?: string;
+  prospectSource?: 'highSchool' | 'transfer' | 'juco' | 'other' | string;
+  classYear?: string;
+  isTransfer?: boolean;
+  isJuco?: boolean;
+  transferFrom?: string;
+  transferFromTeamIndex?: number | null;
   idealPitch?: string;
   activePitches?: string;
   swayPitch?: string;
@@ -77,6 +85,61 @@ function formatGrade(value: unknown) {
   return raw;
 }
 
+function RecruitRatingsPanel({
+  ratings,
+  position,
+  playerType,
+}: {
+  ratings: Record<string, number>;
+  position: string;
+  playerType?: string;
+}) {
+  const keyAttrs = useMemo(
+    () => buildKeyAttributes(ratings, position, playerType),
+    [ratings, position, playerType]
+  );
+  const allAttrs = useMemo(() => buildAllAttributes(ratings), [ratings]);
+
+  return (
+    <>
+      <div style={{ marginTop: 18 }}>
+        <h3>Key attributes</h3>
+        <p style={{ margin: '0 0 10px', color: 'var(--muted)', fontSize: '0.9rem' }}>
+          Scout priorities for {humanize(playerType) || position || 'this position'}
+        </p>
+        <div className="detailGrid">
+          {keyAttrs.map((attr) => (
+            <div className="statTile" key={`key-${attr.key}`} title={attr.label}>
+              <span>
+                {attr.short}
+                <span style={{ color: 'var(--muted)', fontWeight: 400 }}> · {attr.label}</span>
+              </span>
+              <strong style={{ fontSize: '1.2rem' }}>{attr.value}</strong>
+            </div>
+          ))}
+          {keyAttrs.length === 0 && (
+            <p style={{ margin: 0, color: 'var(--muted)' }}>No key attributes available.</p>
+          )}
+        </div>
+      </div>
+      <div style={{ marginTop: 18 }}>
+        <h3>All attributes ({allAttrs.length})</h3>
+        <div className="detailGrid">
+          {allAttrs.map((attr) => (
+            <div className="statTile" key={`all-${attr.key}`} title={attr.label}>
+              <span>
+                {attr.short}
+                <span style={{ color: 'var(--muted)', fontWeight: 400 }}> · {attr.label}</span>
+              </span>
+              <strong style={{ fontSize: '1.2rem' }}>{attr.value}</strong>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 export function RecruitingClient({
   recruits,
   teamContext,
@@ -102,11 +165,17 @@ export function RecruitingClient({
   const [dev, setDev] = useState('');
   const [minOvr, setMinOvr] = useState('');
   const [boardScope, setBoardScope] = useState<'all' | 'mine'>('all');
+  const [prospectSource, setProspectSource] = useState<'all' | 'highSchool' | 'transfer' | 'juco'>(
+    'all'
+  );
+  const [classYear, setClassYear] = useState('');
   const [sortKey, setSortKey] = useState<keyof Recruit | 'nationalRank'>('nationalRank');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [selected, setSelected] = useState<Recruit | null>(null);
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
+  const [ratingFilterOpen, setRatingFilterOpen] = useState(false);
+  const [ratingMins, setRatingMins] = useState<Record<string, string>>({});
 
   const [nilValue, setNilValue] = useState(String(teamContext.nilProgramPointsSpent ?? ''));
   const [totalBudget, setTotalBudget] = useState(String(teamContext.programPointBudget ?? ''));
@@ -135,6 +204,33 @@ export function RecruitingClient({
     }
   }, [showOverall, sortKey]);
 
+  useEffect(() => {
+    setRatingMins({});
+    setRatingFilterOpen(false);
+  }, [position]);
+
+  useEffect(() => {
+    if (prospectSource === 'highSchool') setClassYear('');
+  }, [prospectSource]);
+
+  const showTransferColumns = prospectSource === 'transfer' || prospectSource === 'juco';
+
+  const positionKeyAttrs = useMemo(
+    () => (position ? listKeyAttributeMeta(position) : []),
+    [position]
+  );
+
+  const activeRatingFilters = useMemo(() => {
+    return positionKeyAttrs
+      .map((attr) => {
+        const raw = ratingMins[attr.key];
+        const min = Number(raw);
+        if (!raw || !Number.isFinite(min) || min <= 0) return null;
+        return { ...attr, min };
+      })
+      .filter(Boolean) as Array<{ key: string; label: string; short: string; min: number }>;
+  }, [positionKeyAttrs, ratingMins]);
+
   const positions = useMemo(
     () => [...new Set(recruits.map((r) => r.position).filter(Boolean))].sort(),
     [recruits]
@@ -147,17 +243,49 @@ export function RecruitingClient({
     () => [...new Set(recruits.map((r) => r.devTrait).filter(Boolean))].sort(),
     [recruits]
   );
+  const classYears = useMemo(() => {
+    const pool =
+      prospectSource === 'transfer' || prospectSource === 'juco'
+        ? recruits.filter((r) => r.prospectSource === prospectSource)
+        : recruits.filter((r) => r.prospectSource === 'transfer' || r.prospectSource === 'juco');
+    return [...new Set(pool.map((r) => r.classYear).filter(Boolean) as string[])].sort();
+  }, [recruits, prospectSource]);
+
+  const sourceCounts = useMemo(() => {
+    let highSchool = 0;
+    let transfer = 0;
+    let juco = 0;
+    for (const r of recruits) {
+      if (r.prospectSource === 'transfer') transfer += 1;
+      else if (r.prospectSource === 'juco') juco += 1;
+      else highSchool += 1;
+    }
+    return { highSchool, transfer, juco };
+  }, [recruits]);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     const min = Number(minOvr);
     let rows = recruits.filter((r) => {
       if (boardScope === 'mine' && !r.onMyBoard) return false;
+      if (prospectSource !== 'all') {
+        const source =
+          r.prospectSource || (r.isTransfer ? 'transfer' : r.isJuco ? 'juco' : 'highSchool');
+        if (source !== prospectSource) return false;
+      }
+      if (classYear && r.classYear !== classYear) return false;
       if (position && r.position !== position) return false;
       if (stars && String(r.stars) !== stars) return false;
       if (stage && r.recruitStage !== stage) return false;
       if (dev && r.devTrait !== dev) return false;
       if (showOverall && Number.isFinite(min) && min > 0 && !(Number(r.overall) >= min)) return false;
+      if (activeRatingFilters.length) {
+        const ratings = r.ratings || {};
+        for (const filter of activeRatingFilters) {
+          const value = Number(ratings[filter.key]);
+          if (!Number.isFinite(value) || value < filter.min) return false;
+        }
+      }
       if (q) {
         const hay = [
           r.firstName,
@@ -167,6 +295,9 @@ export function RecruitingClient({
           r.idealPitch,
           r.physicalAbilities,
           r.devTrait,
+          r.transferFrom,
+          r.classYear,
+          r.recruitClass,
         ]
           .join(' ')
           .toLowerCase();
@@ -187,7 +318,22 @@ export function RecruitingClient({
     });
 
     return rows;
-  }, [recruits, search, position, stars, stage, dev, minOvr, sortKey, sortDir, showOverall, boardScope]);
+  }, [
+    recruits,
+    search,
+    position,
+    stars,
+    stage,
+    dev,
+    minOvr,
+    sortKey,
+    sortDir,
+    showOverall,
+    boardScope,
+    prospectSource,
+    classYear,
+    activeRatingFilters,
+  ]);
 
   function toggleSort(key: keyof Recruit | 'nationalRank') {
     if (sortKey === key) {
@@ -265,6 +411,12 @@ export function RecruitingClient({
       ['lastName', 'Last'],
       ['position', 'Pos'],
       ['stars', 'Stars'],
+      ...(showTransferColumns
+        ? ([
+            ['transferFrom', 'From'],
+            ['classYear', 'Year'],
+          ] as const)
+        : []),
       ...(showOverall ? ([['overall', 'OVR']] as const) : []),
       ...(showDevTraits ? ([['devTrait', 'Dev']] as const) : []),
       ['offerCount', 'Offers'],
@@ -398,7 +550,33 @@ export function RecruitingClient({
           <option value="all">Full class</option>
           <option value="mine">My board only</option>
         </select>
-        <select value={position} onChange={(e) => setPosition(e.target.value)}>
+        <select
+          value={prospectSource}
+          onChange={(e) =>
+            setProspectSource(e.target.value as 'all' | 'highSchool' | 'transfer' | 'juco')
+          }
+        >
+          <option value="all">All prospects</option>
+          <option value="highSchool">High school ({formatNumber(sourceCounts.highSchool)})</option>
+          <option value="transfer">Transfers ({formatNumber(sourceCounts.transfer)})</option>
+          <option value="juco">JUCO ({formatNumber(sourceCounts.juco)})</option>
+        </select>
+        {(prospectSource === 'transfer' || prospectSource === 'juco') && (
+          <select value={classYear} onChange={(e) => setClassYear(e.target.value)}>
+            <option value="">All class years</option>
+            {classYears.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+        )}
+        <select
+          value={position}
+          onChange={(e) => {
+            setPosition(e.target.value);
+          }}
+        >
           <option value="">All positions</option>
           {positions.map((p) => (
             <option key={p} value={p}>
@@ -406,6 +584,72 @@ export function RecruitingClient({
             </option>
           ))}
         </select>
+        <div className="ratingFilterWrap">
+          <button
+            type="button"
+            className="buttonGhost"
+            disabled={!position}
+            title={position ? `Filter ${position} key ratings` : 'Select a position first'}
+            onClick={() => setRatingFilterOpen((open) => !open)}
+            data-active={activeRatingFilters.length > 0 || ratingFilterOpen}
+          >
+            Key ratings
+            {activeRatingFilters.length > 0 ? ` (${activeRatingFilters.length})` : ''}
+          </button>
+          {ratingFilterOpen && position && (
+            <>
+              <div className="ratingFilterBackdrop" onClick={() => setRatingFilterOpen(false)} />
+              <div className="ratingFilterPopup" role="dialog" aria-label={`${position} key rating filters`}>
+                <div className="ratingFilterHead">
+                  <div>
+                    <strong>{position} key ratings</strong>
+                    <p>Set minimums for scout attributes. Leave blank to ignore.</p>
+                  </div>
+                  <button type="button" className="buttonGhost" onClick={() => setRatingFilterOpen(false)}>
+                    Close
+                  </button>
+                </div>
+                <div className="ratingFilterGrid">
+                  {positionKeyAttrs.map((attr) => (
+                    <label key={attr.key} className="ratingFilterRow">
+                      <span title={attr.label}>
+                        <strong>{attr.short}</strong>
+                        <em>{attr.label}</em>
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={99}
+                        inputMode="numeric"
+                        placeholder="Min"
+                        value={ratingMins[attr.key] || ''}
+                        onChange={(e) =>
+                          setRatingMins((prev) => ({
+                            ...prev,
+                            [attr.key]: e.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                  ))}
+                </div>
+                <div className="ratingFilterActions">
+                  <button
+                    type="button"
+                    className="buttonGhost"
+                    onClick={() => setRatingMins({})}
+                    disabled={activeRatingFilters.length === 0}
+                  >
+                    Clear
+                  </button>
+                  <button type="button" className="button" onClick={() => setRatingFilterOpen(false)}>
+                    Apply
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
         <select value={stars} onChange={(e) => setStars(e.target.value)}>
           <option value="">All stars</option>
           {[5, 4, 3, 2, 1].map((s) => (
@@ -443,6 +687,28 @@ export function RecruitingClient({
         )}
       </div>
 
+      {activeRatingFilters.length > 0 && (
+        <div className="ratingFilterChips">
+          {activeRatingFilters.map((filter) => (
+            <button
+              key={filter.key}
+              type="button"
+              className="ratingFilterChip"
+              title={`Clear ${filter.label} min`}
+              onClick={() =>
+                setRatingMins((prev) => {
+                  const next = { ...prev };
+                  delete next[filter.key];
+                  return next;
+                })
+              }
+            >
+              {filter.short} ≥ {filter.min} ×
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="panel tableWrap">
         <table className="dataTable">
           <thead>
@@ -467,6 +733,8 @@ export function RecruitingClient({
                 <td>{r.lastName}</td>
                 <td>{r.position}</td>
                 <td>{r.stars}</td>
+                {showTransferColumns && <td>{r.transferFrom || '—'}</td>}
+                {showTransferColumns && <td>{r.classYear || '—'}</td>}
                 {showOverall && <td>{r.overall ?? '—'}</td>}
                 {showDevTraits && <td>{humanize(r.devTrait)}</td>}
                 <td>{r.offerCount}</td>
@@ -534,6 +802,25 @@ export function RecruitingClient({
 
             <div style={{ marginTop: 18 }}>
               <h3>Recruiting</h3>
+              <p>
+                Prospect:{' '}
+                {selected.prospectSource === 'transfer'
+                  ? 'Transfer'
+                  : selected.prospectSource === 'juco'
+                    ? 'JUCO'
+                    : selected.prospectSource === 'highSchool'
+                      ? 'High school'
+                      : humanize(selected.recruitClass) || '—'}
+              </p>
+              {(selected.isTransfer ||
+                selected.isJuco ||
+                selected.prospectSource === 'transfer' ||
+                selected.prospectSource === 'juco') && (
+                <>
+                  <p>From: {selected.transferFrom || '—'}</p>
+                  <p>Class year: {selected.classYear || '—'}</p>
+                </>
+              )}
               <p>Archetype: {selected.archetypeLabel || humanize(selected.playerType) || '—'}</p>
               <p>Dealbreaker: {humanize(selected.dealbreaker)} ({formatGrade(selected.dealbreakerSchoolGrade)})</p>
               <p>Ideal pitch: {humanize(selected.idealPitch) || '—'}</p>
@@ -562,19 +849,18 @@ export function RecruitingClient({
               </div>
             </div>
 
-            {selected.ratings && (
+            {selected.ratings && Object.keys(selected.ratings).length > 0 ? (
+              <RecruitRatingsPanel
+                ratings={selected.ratings}
+                position={selected.position}
+                playerType={selected.playerType}
+              />
+            ) : (
               <div style={{ marginTop: 18 }}>
-                <h3>Ratings</h3>
-                <div className="detailGrid">
-                  {Object.entries(selected.ratings)
-                    .slice(0, 24)
-                    .map(([key, value]) => (
-                      <div className="statTile" key={key}>
-                        <span>{humanize(key.replace(/Rating$/i, ''))}</span>
-                        <strong style={{ fontSize: '1.2rem' }}>{value}</strong>
-                      </div>
-                    ))}
-                </div>
+                <h3>Attributes</h3>
+                <p style={{ color: 'var(--muted)' }}>
+                  No ratings in this extract. Re-extract recruiting to load attributes.
+                </p>
               </div>
             )}
 

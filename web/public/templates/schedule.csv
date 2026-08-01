@@ -1,0 +1,3 @@
+week,weekType,dayOfWeek,awayTeam,homeTeam,awayScore,homeScore,isFinal
+1,RegularSeason,Saturday,Akron,Ohio State,7,52,true
+2,RegularSeason,Saturday,Ohio State,Michigan,,,
