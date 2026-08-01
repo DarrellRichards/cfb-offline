@@ -36,6 +36,10 @@ data/schedule.json
 data/teams.json
 data/stats.json
 data/awards.json
+data/roster.json
+data/news.json
+data/ai-news-license.json
+data/uploads/
 data/player-type-archetype-fit.json
 
 # Env / secrets

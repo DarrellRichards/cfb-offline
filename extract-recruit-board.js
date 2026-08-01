@@ -157,6 +157,44 @@ function getPlayerType(playerRec) {
 	return String(v).trim();
 }
 
+function getRecruitClass(recruitRec) {
+	return String(safeField(recruitRec, 'Class') || '').trim();
+}
+
+function classifyProspectSource(recruitClass) {
+	const raw = String(recruitClass || '').trim();
+	if (/^Transfer_/i.test(raw)) return 'transfer';
+	if (/^JuniorCollege_/i.test(raw)) return 'juco';
+	if (/^HighSchool$/i.test(raw) || !raw) return 'highSchool';
+	return 'other';
+}
+
+function getClassYear(playerRec, recruitClass) {
+	const fromPlayer = String(safeField(playerRec, 'SchoolYear') || '').trim();
+	if (fromPlayer) return fromPlayer;
+	const cls = String(recruitClass || '');
+	const match = cls.match(/_(Freshman|Sophomore|Junior|Senior)$/i);
+	return match ? match[1] : '';
+}
+
+function resolveTransferFrom(playerRec, teamLookupByIndex) {
+	const prevTeamIndex = Number(safeField(playerRec, 'PrevTeamIndex'));
+	if (!Number.isFinite(prevTeamIndex) || prevTeamIndex < 0 || prevTeamIndex === 255) {
+		return { transferFrom: '', transferFromTeamIndex: null };
+	}
+	const hit = teamLookupByIndex.get(prevTeamIndex);
+	if (!hit?.rec) {
+		return { transferFrom: '', transferFromTeamIndex: prevTeamIndex };
+	}
+	const displayName = String(
+		safeField(hit.rec, 'DisplayName') || safeField(hit.rec, 'LongName') || ''
+	).trim();
+	return {
+		transferFrom: displayName,
+		transferFromTeamIndex: prevTeamIndex,
+	};
+}
+
 function parseDirectStars(value) {
 	if (value == null) {
 		return null;
@@ -711,6 +749,13 @@ async function main() {
 	const file = await openSave(savePath);
 	const recruitTargetArrayT = await readTable(file, 'RecruitTarget[]');
 	const recruitTargetT = await readTable(file, 'RecruitTarget');
+	let userRecruitTargetT = null;
+	try {
+		userRecruitTargetT = await readTable(file, 'UserRecruitTarget');
+	} catch {
+		userRecruitTargetT = null;
+	}
+	const recruitingBoardT = await readTable(file, 'RecruitingBoard');
 	const recruitT = await readTable(file, 'Recruit');
 	const playerT = tableByName(file, 'Player');
 	await playerT.readRecords();
@@ -728,6 +773,28 @@ async function main() {
 	const mySchoolTrackingT = await readTable(file, 'MySchoolTrackingTable');
 	const teamContext = await buildUserTeamContext(file, coachT, teamT, mySchoolTrackingT);
 
+	const targetTablesById = new Map([[recruitTargetT.header.tableId, recruitTargetT]]);
+	if (userRecruitTargetT) {
+		targetTablesById.set(userRecruitTargetT.header.tableId, userRecruitTargetT);
+	}
+
+	// User board: Team.RecruitingBoard → Recruits (RecruitTarget[] row). Slots often point at UserRecruitTarget.
+	const userCoach = getUserControlledCoach(coachT);
+	const userTeamRec = getUserControlledTeamRecord(userCoach, coachT, teamT);
+	let myBoardArrayRow = null;
+	if (userTeamRec && !userTeamRec.isEmpty) {
+		const boardRef = parseRef(safeField(userTeamRec, 'RecruitingBoard'));
+		if (boardRef && boardRef.tableId === recruitingBoardT.header.tableId) {
+			const boardRec = recruitingBoardT.records[boardRef.row];
+			if (boardRec && !boardRec.isEmpty) {
+				const recruitsRef = parseRef(safeField(boardRec, 'Recruits'));
+				if (recruitsRef && recruitsRef.tableId === recruitTargetArrayT.header.tableId) {
+					myBoardArrayRow = recruitsRef.row;
+				}
+			}
+		}
+	}
+
 	const rows = [];
 	const seen = new Set();
 	const cols = recruitTargetArrayT.offsetTable.map((o) => o.name);
@@ -740,7 +807,16 @@ async function main() {
 		return s;
 	};
 
-	const appendRow = ({ recruitRec, playerRec, recruitRow, playerRow, boardRow, targetRow, targetRec }) => {
+	const appendRow = ({
+		recruitRec,
+		playerRec,
+		recruitRow,
+		playerRow,
+		boardRow,
+		targetRow,
+		targetRec,
+		onMyBoard = false,
+	}) => {
 		const { firstName, lastName } = getRecruitName(playerRec, recruitRec);
 		if (!firstName || !lastName) {
 			return;
@@ -776,6 +852,10 @@ async function main() {
 			safeField(playerRec, 'PhysicalAbility5') || '',
 		];
 		const physicalAbilityDisplay = physicalAbilityEntries.map((e) => e.label).join(' | ');
+		const recruitClass = getRecruitClass(recruitRec);
+		const prospectSource = classifyProspectSource(recruitClass);
+		const classYear = getClassYear(playerRec, recruitClass);
+		const { transferFrom, transferFromTeamIndex } = resolveTransferFrom(playerRec, teamLookupByIndex);
 
 		seen.add(key);
 		const ratings = collectRatings(playerRec, recruitRec);
@@ -804,6 +884,13 @@ async function main() {
 			dealbreakerSchoolGrade,
 			dealbreakerStatus: dealbreakerStatusMeta.status,
 			dealbreakerStatusDetail: dealbreakerStatusMeta.detail,
+			recruitClass,
+			prospectSource,
+			classYear,
+			isTransfer: prospectSource === 'transfer',
+			isJuco: prospectSource === 'juco',
+			transferFrom: prospectSource === 'juco' && !transferFrom ? 'JUCO' : transferFrom,
+			transferFromTeamIndex,
 			ratings,
 			topSchools,
 			idealPitch,
@@ -821,7 +908,7 @@ async function main() {
 			physicalAbilityName5: physicalAbilityEntries.find((e) => e.slot === 5)?.name || '',
 			physicalAbilityEntries,
 			physicalAbilities: physicalAbilityDisplay,
-			onMyBoard: boardRow !== '' && boardRow != null,
+			onMyBoard: Boolean(onMyBoard),
 			boardRow,
 			targetRow,
 			playerRow,
@@ -829,26 +916,49 @@ async function main() {
 		});
 	};
 
-	// Index pipeline-board targets so all-class extracts can still attach pitches / board rows.
+	// Index board targets. Prefer the user team's RecruitingBoard row; accept UserRecruitTarget refs.
 	const boardTargetByRecruitRow = new Map();
-	for (let boardRow = 0; boardRow < recruitTargetArrayT.header.recordCapacity; boardRow++) {
+	const myBoardRecruitRows = new Set();
+
+	function ingestBoardArrayRow(boardRow) {
 		const boardRec = recruitTargetArrayT.records[boardRow];
-		if (!boardRec || boardRec.isEmpty) continue;
+		if (!boardRec || boardRec.isEmpty) return;
 		for (const col of cols) {
 			const targetRef = parseRef(safeField(boardRec, col));
-			if (!targetRef || targetRef.tableId !== recruitTargetT.header.tableId) continue;
-			const targetRec = recruitTargetT.records[targetRef.row];
+			if (!targetRef) continue;
+			const targetTable = targetTablesById.get(targetRef.tableId);
+			if (!targetTable) continue;
+			const targetRec = targetTable.records[targetRef.row];
 			if (!targetRec || targetRec.isEmpty) continue;
 			const recruitRef = parseRef(safeField(targetRec, 'Recruit'));
 			if (!recruitRef || recruitRef.tableId !== recruitT.header.tableId) continue;
-			if (!boardTargetByRecruitRow.has(recruitRef.row)) {
+
+			const isUserTargetTable =
+				userRecruitTargetT && targetRef.tableId === userRecruitTargetT.header.tableId;
+			const onMyBoard =
+				(myBoardArrayRow != null && boardRow === myBoardArrayRow) ||
+				(myBoardArrayRow == null && Boolean(isUserTargetTable));
+
+			if (onMyBoard) myBoardRecruitRows.add(recruitRef.row);
+
+			const existing = boardTargetByRecruitRow.get(recruitRef.row);
+			if (!existing || onMyBoard) {
 				boardTargetByRecruitRow.set(recruitRef.row, {
 					boardRow,
 					targetRow: targetRef.row,
 					targetRec,
+					onMyBoard,
 				});
 			}
 		}
+	}
+
+	if (myBoardArrayRow != null) {
+		ingestBoardArrayRow(myBoardArrayRow);
+	}
+	for (let boardRow = 0; boardRow < recruitTargetArrayT.header.recordCapacity; boardRow++) {
+		if (myBoardArrayRow != null && boardRow === myBoardArrayRow) continue;
+		ingestBoardArrayRow(boardRow);
 	}
 
 	if (extractAllClass) {
@@ -870,10 +980,17 @@ async function main() {
 				boardRow: boardHit ? boardHit.boardRow : '',
 				targetRow: boardHit ? boardHit.targetRow : '',
 				targetRec: boardHit ? boardHit.targetRec : null,
+				onMyBoard: myBoardRecruitRows.has(recruitRow) || Boolean(boardHit?.onMyBoard),
 			});
 		}
 	} else {
-		for (const [recruitRow, boardHit] of boardTargetByRecruitRow.entries()) {
+		const boardEntries =
+			myBoardRecruitRows.size > 0
+				? [...myBoardRecruitRows].map((recruitRow) => [recruitRow, boardTargetByRecruitRow.get(recruitRow)])
+				: [...boardTargetByRecruitRow.entries()].filter(([, hit]) => hit && hit.onMyBoard);
+
+		for (const [recruitRow, boardHit] of boardEntries) {
+			if (!boardHit) continue;
 			const recruitRec = recruitT.records[recruitRow];
 			if (!recruitRec || recruitRec.isEmpty) continue;
 			const playerRef = parseRef(safeField(recruitRec, 'Player'));
@@ -889,6 +1006,7 @@ async function main() {
 				boardRow: boardHit.boardRow,
 				targetRow: boardHit.targetRow,
 				targetRec: boardHit.targetRec,
+				onMyBoard: true,
 			});
 		}
 	}
@@ -902,7 +1020,7 @@ async function main() {
 	);
 
 	const csvLines = [
-		'firstName,lastName,position,playerType,stars,overall,devTrait,dealbreaker,offerCount,recruitStage,dealbreakerSchoolGrade,dealbreakerStatus,dealbreakerStatusDetail,idealPitch,activePitches,swayPitch,physicalAbility1,physicalAbility2,physicalAbility3,physicalAbility4,physicalAbility5,physicalAbilityName1,physicalAbilityName2,physicalAbilityName3,physicalAbilityName4,physicalAbilityName5,physicalAbilities,boardRow,targetRow,playerRow,recruitRow',
+		'firstName,lastName,position,playerType,stars,overall,devTrait,dealbreaker,offerCount,recruitStage,dealbreakerSchoolGrade,dealbreakerStatus,dealbreakerStatusDetail,recruitClass,prospectSource,classYear,transferFrom,idealPitch,activePitches,swayPitch,physicalAbility1,physicalAbility2,physicalAbility3,physicalAbility4,physicalAbility5,physicalAbilityName1,physicalAbilityName2,physicalAbilityName3,physicalAbilityName4,physicalAbilityName5,physicalAbilities,boardRow,targetRow,playerRow,recruitRow',
 	];
 	for (const r of rows) {
 		csvLines.push(
@@ -920,6 +1038,10 @@ async function main() {
 					r.dealbreakerSchoolGrade,
 					r.dealbreakerStatus,
 					r.dealbreakerStatusDetail,
+				r.recruitClass,
+				r.prospectSource,
+				r.classYear,
+				r.transferFrom,
 				r.idealPitch,
 				r.activePitches,
 				r.swayPitch,
@@ -996,6 +1118,8 @@ async function main() {
 				scope: boardOnlyMode ? 'board-only' : 'all-recruits',
 				rows: rows.length,
 				onMyBoard: rows.filter((r) => r.onMyBoard).length,
+				myBoardArrayRow,
+				hasUserRecruitTargetTable: Boolean(userRecruitTargetT),
 				teamContext,
 				outPath,
 				jsonPath,

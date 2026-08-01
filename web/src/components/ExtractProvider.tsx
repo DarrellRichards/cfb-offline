@@ -10,15 +10,24 @@ import {
   useState,
 } from 'react';
 import { useRouter } from 'next/navigation';
+import { loadSettings } from '@/lib/settings';
 
 export type SaveInfo = { name: string; fullPath: string; mtimeMs: number; size: number };
 
-export type ExtractStepId = 'league' | 'schedule' | 'teams' | 'stats' | 'awards' | 'recruits';
+export type ExtractStepId =
+  | 'league'
+  | 'schedule'
+  | 'teams'
+  | 'roster'
+  | 'stats'
+  | 'awards'
+  | 'recruits';
 
 export const EXTRACT_STEPS: Array<{ id: ExtractStepId; label: string }> = [
   { id: 'league', label: 'League' },
   { id: 'schedule', label: 'Schedule' },
   { id: 'teams', label: 'Teams' },
+  { id: 'roster', label: 'Roster' },
   { id: 'stats', label: 'Stats' },
   { id: 'awards', label: 'Awards' },
   { id: 'recruits', label: 'Recruits' },
@@ -40,9 +49,12 @@ type ExtractContextValue = {
   setSavePath: (path: string) => void;
   lastSaveName: string;
   isDesktop: boolean;
+  viewOnly: boolean;
+  canWriteBack: boolean;
   refreshSaves: () => Promise<void>;
   pickLatest: () => void;
   pickSaveFile: () => Promise<string | null>;
+  uploadAndExtract: (file: File) => Promise<boolean>;
   extractLatest: () => Promise<void>;
   extractSelected: (scope?: string) => Promise<boolean>;
   extractPath: (pathToExtract: string, scope?: string) => Promise<boolean>;
@@ -51,12 +63,14 @@ type ExtractContextValue = {
 const ExtractContext = createContext<ExtractContextValue | null>(null);
 
 const STORAGE_KEY = 'cfb-offline-last-save';
+const VIEW_ONLY_KEY = 'cfb-offline-view-only';
 
 function emptySteps(): Record<ExtractStepId, StepState> {
   return {
     league: 'pending',
     schedule: 'pending',
     teams: 'pending',
+    roster: 'pending',
     stats: 'pending',
     awards: 'pending',
     recruits: 'pending',
@@ -65,6 +79,23 @@ function emptySteps(): Record<ExtractStepId, StepState> {
 
 function isDesktopRuntime() {
   return typeof window !== 'undefined' && Boolean(window.cfbDesktop?.isDesktop);
+}
+
+function pathLooksUploaded(savePath: string) {
+  const normalized = String(savePath || '').replace(/\\/g, '/').toLowerCase();
+  return normalized.includes('/uploads/') || /(^|\/)uploads\/[^/]+$/i.test(normalized);
+}
+
+function readStoredViewOnly(savePath: string) {
+  if (typeof window === 'undefined') return false;
+  if (pathLooksUploaded(savePath)) return true;
+  return window.localStorage.getItem(VIEW_ONLY_KEY) === '1';
+}
+
+function writeStoredViewOnly(viewOnly: boolean) {
+  if (typeof window === 'undefined') return;
+  if (viewOnly) window.localStorage.setItem(VIEW_ONLY_KEY, '1');
+  else window.localStorage.removeItem(VIEW_ONLY_KEY);
 }
 
 export function ExtractProvider({ children }: { children: React.ReactNode }) {
@@ -77,6 +108,7 @@ export function ExtractProvider({ children }: { children: React.ReactNode }) {
   const [saves, setSaves] = useState<SaveInfo[]>([]);
   const [savePath, setSavePath] = useState('');
   const [isDesktop, setIsDesktop] = useState(false);
+  const [viewOnly, setViewOnly] = useState(false);
   const startupHandled = useRef(false);
   const runExtractRef = useRef<(path: string, scope?: string) => Promise<boolean>>(async () => false);
 
@@ -85,6 +117,12 @@ export function ExtractProvider({ children }: { children: React.ReactNode }) {
     const hit = saves.find((s) => s.fullPath === savePath);
     return hit?.name || savePath.split(/[/\\]/).pop() || savePath;
   }, [savePath, saves]);
+
+  const markSource = useCallback((pathToExtract: string, forceViewOnly?: boolean) => {
+    const nextViewOnly = forceViewOnly === true || pathLooksUploaded(pathToExtract);
+    setViewOnly(nextViewOnly);
+    writeStoredViewOnly(nextViewOnly);
+  }, []);
 
   const loadSaves = useCallback(async (nextDir?: string) => {
     if (isDesktopRuntime() && window.cfbDesktop) {
@@ -137,6 +175,7 @@ export function ExtractProvider({ children }: { children: React.ReactNode }) {
 
       window.localStorage.setItem(STORAGE_KEY, pathToExtract);
       setSavePath(pathToExtract);
+      markSource(pathToExtract);
       setBusy(true);
       setPanelOpen(true);
       setSteps(emptySteps());
@@ -162,7 +201,40 @@ export function ExtractProvider({ children }: { children: React.ReactNode }) {
           }
           setSteps((prev) => ({ ...prev, [stepId]: 'done' }));
         }
-        setStatus('Dynasty snapshot ready.');
+
+        try {
+          const settings = loadSettings();
+          const shouldWriteNews =
+            settings.autoNews &&
+            (scope === 'all' ||
+              stepIds.includes('schedule') ||
+              stepIds.includes('league') ||
+              stepIds.includes('awards'));
+          if (shouldWriteNews) {
+            setStatus('Writing weekly news desk…');
+            const newsRes = await fetch('/api/news/auto', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                enabled: true,
+                count: settings.autoNewsCount,
+              }),
+            });
+            const newsJson = await newsRes.json().catch(() => ({}));
+            if (newsRes.ok && newsJson.created?.length) {
+              setStatus(
+                `Dynasty snapshot ready. Added ${newsJson.created.length} Week ${newsJson.week} stories.`
+              );
+            } else {
+              setStatus('Dynasty snapshot ready.');
+            }
+          } else {
+            setStatus('Dynasty snapshot ready.');
+          }
+        } catch {
+          setStatus('Dynasty snapshot ready.');
+        }
+
         router.refresh();
         setPanelOpen(false);
         return true;
@@ -173,13 +245,15 @@ export function ExtractProvider({ children }: { children: React.ReactNode }) {
         setBusy(false);
       }
     },
-    [router]
+    [router, markSource]
   );
 
   runExtractRef.current = runExtract;
 
   useEffect(() => {
     setIsDesktop(isDesktopRuntime());
+    const stored = typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null;
+    if (stored) setViewOnly(readStoredViewOnly(stored));
     loadSaves().catch((err) => setStatus(err instanceof Error ? err.message : String(err)));
   }, [loadSaves]);
 
@@ -194,6 +268,7 @@ export function ExtractProvider({ children }: { children: React.ReactNode }) {
 
         if (stored) {
           const name = stored.split(/[/\\]/).pop() || stored;
+          setViewOnly(readStoredViewOnly(stored));
           setStatus(`Loading last dynasty: ${name}…`);
           const ok = await runExtractRef.current(stored, 'all');
           if (ok) return;
@@ -205,6 +280,8 @@ export function ExtractProvider({ children }: { children: React.ReactNode }) {
           const result = await window.cfbDesktop.promptStartupSave();
           if (result.alreadyShown) return;
           if (result.savePath) {
+            writeStoredViewOnly(false);
+            setViewOnly(false);
             setStatus(`Selected ${result.savePath.split(/[/\\]/).pop()}`);
             await runExtractRef.current(result.savePath, 'all');
             return;
@@ -212,7 +289,11 @@ export function ExtractProvider({ children }: { children: React.ReactNode }) {
         }
 
         setPanelOpen(true);
-        setStatus('Select a dynasty save to load the desk.');
+        setStatus(
+          isDesktopRuntime()
+            ? 'Select a dynasty save to load the desk.'
+            : 'Upload a DYNASTY save to load the desk (view-only on hosted servers).'
+        );
       } catch (err) {
         setPanelOpen(true);
         setStatus(err instanceof Error ? err.message : String(err));
@@ -232,14 +313,17 @@ export function ExtractProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     setSavePath(saves[0].fullPath);
+    markSource(saves[0].fullPath, false);
     setStatus(`Selected latest: ${saves[0].name}`);
-  }, [saves]);
+  }, [saves, markSource]);
 
   const pickSaveFile = useCallback(async () => {
     if (window.cfbDesktop?.pickSaveFile) {
       const selected = await window.cfbDesktop.pickSaveFile();
       if (selected) {
         window.localStorage.setItem(STORAGE_KEY, selected);
+        writeStoredViewOnly(false);
+        setViewOnly(false);
         setSavePath(selected);
         setStatus(`Selected ${selected.split(/[/\\]/).pop()}`);
       }
@@ -248,6 +332,34 @@ export function ExtractProvider({ children }: { children: React.ReactNode }) {
     setPanelOpen(true);
     return null;
   }, []);
+
+  const uploadAndExtract = useCallback(
+    async (file: File) => {
+      if (!file) {
+        setStatus('Choose a DYNASTY file to upload.');
+        return false;
+      }
+      setBusy(true);
+      setPanelOpen(true);
+      setStatus(`Uploading ${file.name}…`);
+      try {
+        const body = new FormData();
+        body.append('file', file);
+        const res = await fetch('/api/saves/upload', { method: 'POST', body });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Upload failed');
+        markSource(json.savePath, true);
+        setStatus(`Uploaded ${json.name}. Extracting…`);
+        setBusy(false);
+        return runExtract(json.savePath, 'all');
+      } catch (err) {
+        setStatus(err instanceof Error ? err.message : String(err));
+        setBusy(false);
+        return false;
+      }
+    },
+    [markSource, runExtract]
+  );
 
   const extractSelected = useCallback(
     async (scope = 'all') => runExtract(savePath, scope),
@@ -262,6 +374,8 @@ export function ExtractProvider({ children }: { children: React.ReactNode }) {
         setStatus('Select a dynasty save to continue.');
         return;
       }
+      writeStoredViewOnly(false);
+      setViewOnly(false);
       await runExtract(selected, 'all');
       return;
     }
@@ -272,13 +386,14 @@ export function ExtractProvider({ children }: { children: React.ReactNode }) {
     }
     const latest = list[0];
     if (!latest) {
-      setStatus('No dynasty files found. Open Extract to set your saves folder.');
+      setStatus('No dynasty files found. Upload a DYNASTY save or open Extract.');
       setPanelOpen(true);
       return;
     }
     setSavePath(latest.fullPath);
+    markSource(latest.fullPath, false);
     await runExtract(latest.fullPath, 'all');
-  }, [saves, loadSaves, dir, runExtract]);
+  }, [saves, loadSaves, dir, runExtract, markSource]);
 
   const value: ExtractContextValue = {
     panelOpen,
@@ -294,9 +409,12 @@ export function ExtractProvider({ children }: { children: React.ReactNode }) {
     setSavePath,
     lastSaveName,
     isDesktop,
+    viewOnly,
+    canWriteBack: !viewOnly,
     refreshSaves,
     pickLatest,
     pickSaveFile,
+    uploadAndExtract,
     extractLatest,
     extractSelected,
     extractPath: runExtract,

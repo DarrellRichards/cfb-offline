@@ -16,6 +16,10 @@
     "web:dev": "npm run dev --prefix web",
     "web:build": "npm run build --prefix web",
     "web:start": "npm run start --prefix web",
+    "promo": "npm run promo:dev",
+    "promo:dev": "npm run dev --prefix promo",
+    "promo:build": "npm run build --prefix promo",
+    "promo:start": "npm run start --prefix promo",
     "desktop": "npm run web:build && cross-env CFB_ELECTRON_DEV=0 npx electron .",
     "desktop:dev": "cross-env CFB_ELECTRON_DEV=1 npx electron .",
     "dist": "npm run web:build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder --config electron-builder.yml",
@@ -26,6 +30,7 @@
     "extract:league": "node extract-league-snapshot.js",
     "extract:schedule": "node extract-schedule.js",
     "extract:teams": "node extract-teams.js",
+    "extract:roster": "node extract-roster.js",
     "extract:stats": "node extract-stats.js",
     "extract:awards": "node extract-awards.js",
     "test": "node -e \"require('./lib/franchise'); console.log('ok')\""
@@ -36,7 +41,7 @@
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "electron": "^31.7.7",
-    "electron-builder": "^25.1.8"
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3"
   }
 }

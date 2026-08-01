@@ -9,6 +9,7 @@ const EXTRACTORS = [
 	{ id: 'league', script: 'extract-league-snapshot.js' },
 	{ id: 'schedule', script: 'extract-schedule.js' },
 	{ id: 'teams', script: 'extract-teams.js' },
+	{ id: 'roster', script: 'extract-roster.js' },
 	{ id: 'stats', script: 'extract-stats.js' },
 	{ id: 'awards', script: 'extract-awards.js' },
 	{ id: 'recruits', script: 'extract-recruit-board.js', extraArgs: [] },

@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { readSnapshot } from '@/lib/data';
 import { formatGameStatus } from '@/lib/schedule';
-import type { ScheduleSnapshot, TeamsSnapshot } from '@/lib/types';
+import type { RosterSnapshot, ScheduleSnapshot, TeamsSnapshot } from '@/lib/types';
 import { formatRecord } from '@/lib/types';
+import { TeamRosterClient } from '@/components/TeamRosterClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,7 @@ export default async function TeamDetailPage({
   const teamIndex = Number(teamIndexRaw);
   const teams = readSnapshot<TeamsSnapshot>('teams');
   const schedule = readSnapshot<ScheduleSnapshot>('schedule');
+  const roster = readSnapshot<RosterSnapshot>('roster');
   const team = teams?.teams.find((t) => t.teamIndex === teamIndex);
 
   if (!team) {
@@ -33,6 +35,8 @@ export default async function TeamDetailPage({
     )
     .slice(0, 8);
 
+  const rosterPlayers = (roster?.players || []).filter((p) => p.teamIndex === teamIndex);
+
   return (
     <>
       <section className="section" style={{ marginTop: 8 }}>
@@ -42,6 +46,7 @@ export default async function TeamDetailPage({
             <p>
               {team.conference?.name || 'Independent'} ·{' '}
               {formatRecord(team.record.wins, team.record.losses, team.record.ties)}
+              {rosterPlayers.length ? ` · ${rosterPlayers.length} players` : ''}
             </p>
           </div>
           <Link href="/teams" className="buttonGhost">
@@ -76,6 +81,11 @@ export default async function TeamDetailPage({
           </div>
         </div>
       </section>
+
+      <TeamRosterClient
+        players={rosterPlayers}
+        currentSeasonYear={roster?.currentSeasonYear ?? null}
+      />
 
       <section className="section">
         <div className="sectionHead">

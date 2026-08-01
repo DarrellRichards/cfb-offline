@@ -68,9 +68,9 @@ export function RankingsClient({
   }>;
 }) {
   const router = useRouter();
-  const { extractPath } = useExtract();
+  const { extractPath, canWriteBack } = useExtract();
   const { settings } = useSettings();
-  const allowRankingEdits = settings.rankingEdits;
+  const allowRankingEdits = settings.rankingEdits && canWriteBack;
   const [poll, setPoll] = useState<RankingBoard>('media');
   const meta = BOARD_META[poll];
   const [editing, setEditing] = useState(false);
